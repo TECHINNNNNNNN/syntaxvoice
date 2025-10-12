@@ -1,0 +1,7 @@
+{
+  "watch": ["src/", "lib/"],
+  "ext": "js,json,graphql",
+  "ignore": ["node_modules/", "dist/", "*.test.js"],
+  "exec": "node ./src/server.js",
+  "delay": "1000"
+}

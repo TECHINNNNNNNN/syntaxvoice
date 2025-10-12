@@ -1,0 +1,120 @@
+import {useState, useEffect} from 'react'
+import { useNavigate } from 'react-router-dom';
+
+
+
+const BASE_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:1234'
+
+export type Project = {
+    id: number;
+    name: string;
+    description: string | undefined;
+}
+
+export function useProjects() {
+    const [projects, setProjects] = useState<Project[]>([])
+    const [loading, setLoading] = useState<boolean>(true)
+    const [error, setError] = useState<string | null>(null)
+    const navigate = useNavigate()
+
+    useEffect(() => {
+        const fetchProjects = async () => {
+            try {
+                const response = await fetch(`${BASE_URL}/projects`, {
+                    method: 'GET',
+                    headers: {
+                        "Authorization": `Bearer ${localStorage.getItem('token')}`
+                    }
+                })
+
+                if (response.ok) {
+                    const data = await response.json()
+                    setProjects(data.projects)
+                } else {
+                    setError('Failed to fetch projects')
+                }
+                setLoading(false)
+            } catch (error) {
+                setError('An error occurred while fetching projects')
+                setLoading(false)
+            } finally {
+                setLoading(false)
+            }
+        }
+        fetchProjects()
+    },[])
+
+    const createProject = async (newProjectData: {name: string, description?: string} ) => {
+        try {
+            const response = await fetch(`${BASE_URL}/project`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    "Authorization": `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(newProjectData)
+            })
+
+            const responseData = await response.json()
+
+            if (!response.ok) {
+                throw new Error('Failed to create project')
+            }
+
+            
+            return responseData.project
+        } catch (error) {
+            console.error('Error creating project:', error)
+            setError('An error occurred while creating the project')
+        }
+    }
+
+    const updateProject = async (updatedProject: { projectId: number, name: string, description: string | undefined}) => {
+        try {
+            const response = await fetch(`${BASE_URL}/project/${updatedProject.projectId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({
+                    name: updatedProject.name,
+                    description: updatedProject.description
+                })
+            })
+            if (!response.ok) {
+                throw new Error('Failed to update project')
+            }
+            // Use correct property names and ensure type matches Project
+            setProjects(currentProjects => {
+                const projectExists = currentProjects.some(p => p.id === updatedProject.projectId)
+
+                if (projectExists) {
+                    return currentProjects.map(p =>
+                        p.id === updatedProject.projectId
+                            ? { ...p, name: updatedProject.name, description: updatedProject.description }
+                            : p
+                    )
+
+                } else {
+                    return [
+                        {
+                            id: updatedProject.projectId,
+                            name: updatedProject.name,
+                            description: updatedProject.description
+                        },
+                        ...currentProjects
+                    ]
+                }
+            }
+            )
+        } catch (error) {
+            setError('An error occurred while updating the project')
+            console.error('Error updating project:', error)
+        }
+    }
+
+
+    return {projects, loading, error, createProject, updateProject}
+
+}
