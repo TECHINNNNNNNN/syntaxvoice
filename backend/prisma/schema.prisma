@@ -30,6 +30,7 @@ model Project {
   userId    Int       @map("user_id")
   name      String
   description String?
+  techStack   String?   @map("tech_stack")
   createdAt DateTime  @default(now()) @map("created_at")
   user      User      @relation(fields: [userId], references: [id])
   messages  Message[]
@@ -43,6 +44,7 @@ model Message {
   content        String
   enhancedPrompt String?  @map("enhanced_prompt")
   type           String
+  messageId      String?  @map("message_id")
   createdAt      DateTime @default(now()) @map("created_at")
   project        Project  @relation(fields: [projectId], references: [id])
 

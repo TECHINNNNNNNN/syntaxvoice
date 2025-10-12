@@ -1,6 +1,6 @@
 import express from 'express'
 import cors from 'cors'
-import { experimental_transcribe as transcribe, generateText } from 'ai'
+import { experimental_transcribe as transcribe, generateText, streamText } from 'ai'
 import { openai } from '@ai-sdk/openai'
 import { fileURLToPath } from 'url'
 import dotenv from 'dotenv'
@@ -9,7 +9,6 @@ import multer from 'multer'
 import {PrismaClient} from './generated/prisma/index.js'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-import { type } from 'os'
 
 const prisma = new PrismaClient()
 
@@ -214,6 +213,21 @@ app.patch('/project/:id', authenticateToken, async (req, res) => {
     }
 })
 
+app.post('/enhance-project-context', authenticateToken, async (req,res) => {
+    const { projectId, projectDescription, techStack } = req.body
+
+    try {
+        await prisma.project.update({
+            where: { id: Number(projectId) },
+            data: { description: projectDescription, techStack  }
+        })
+
+        res.status(200).json({message: "Project context enhanced successfully"})
+    } catch (error) {
+        res.status(500).json({error: "Failed to enhance project context"})
+    }
+})
+
 app.post('/transcribe',authenticateToken, upload.single('audio'), async (req, res) => {
     const {projectId} = req.body
     try {
@@ -227,41 +241,89 @@ app.post('/transcribe',authenticateToken, upload.single('audio'), async (req, re
             audio: audioBuffer,
         })
 
-        const enhancedPrompt = await generateText({
-            model: openai('gpt-4'),
-            system: `You are an expert prompt engineer specializing in converting casual speech into structured XML prompts that will be sent directly to an AI coding assistant.
-
-            Transform the user's casual speech into a well-structured XML prompt written as direct instructions to an AI assistant using "you" language:
-            - Clear context about what needs to be done
-            - Specific technical requirements using second-person ("you should", "create", "implement")
-            - Proper formatting instructions
-            - Any missing details that would help the AI understand the task
-
-            Always return your response in this XML format:
-            <task>
-            <context>Background information about the current situation</context>
-            <action>Direct instruction to the AI assistant (use "you" language)</action>  
-            <requirements>Technical requirements and constraints for the AI</requirements>
-            <output_format>What the AI should return as output</output_format>
-            </task>`,
-            prompt: `Convert this casual speech into a structured coding prompt: "${transcript.text}"`
+        const previousMessages = await prisma.message.findMany({
+            where: {projectId: Number(projectId)},
+            orderBy: { createdAt: 'asc' },
+            select: { content: true , enhancedPrompt: true },
+            take: 10
         })
 
-        const newMessage = await prisma.message.create({
+        const project = await prisma.project.findUnique({
+            where: {id: Number(projectId)}
+        })
+
+        if (!project){
+            return res.status(404).json({error: "Project not found"})
+        }
+
+        const buildContextualSystemPromp = (project) => {
+            return (
+                `PROJECT CONTEXT:
+                - Tech Stack: ${project.techStack || 'Not specified'}
+                - Description: ${project.description || 'No description provided'}`
+            )
+        }
+
+        const messages = [
+            {
+                role: 'system',
+                content: `You are an expert AI prompt engineer specializing in voice-to-code workflows. You help developers by:
+                ${buildContextualSystemPromp(project)}
+
+                1. Converting casual speech into structured XML coding prompts
+                2. Understanding the context of their ongoing project
+                3. Building upon previous conversations and code discussions
+                4. Tailoring responses specifically for their coding style and project needs
+
+                Previous conversation context: This is an ongoing coding project. Reference past messages to provide contextual, relevant assistance.
+
+                Always return responses in this XML format:
+                <task>
+                <context>Background about the current situation and how it relates to previous discussions</context>
+                <action>Direct instruction using "you" language, building on previous context</action>  
+                <requirements>Technical requirements considering the project's current state</requirements>
+                <output_format>What should be returned as output</output_format>
+                </task>`
+            },
+            ...previousMessages.flatMap(msg => [
+                {role: 'user', content: msg.content},
+                {role: 'assistant', content: msg.enhancedPrompt || ''}
+            ]),
+            { role: 'user', content: `Convert this casual speech into a structured coding prompt, considering our previous conversation: "${transcript.text}"` }
+        ]
+
+        const result = await streamText({
+            model: openai('gpt-4'),
+            messages: messages,
+            maxTokens: 1000,
+        })
+
+        res.setHeader('Content-Type','text/plain; charset=utf-8')
+        res.setHeader('Transfer-Encoding', 'chunked')
+        
+        let enhancedPrompt = ''
+        for await (const textPart of result.textStream) {
+            res.write(textPart);
+            enhancedPrompt += textPart
+        }
+
+        res.end()
+
+
+        await prisma.message.create({
             data: {
                 projectId: Number(projectId),
                 content: transcript.text,
-                enhancedPrompt: enhancedPrompt.text,
+                enhancedPrompt: enhancedPrompt,
                 type: 'audio',
             }
         })
 
-        res.status(200).json({
-            message: newMessage,
-        })
     } catch (error) {
         console.error('Transcription error:', error)
-        res.status(500).json({ error: 'Failed to transcribe audio' })
+        if (!res.headersSent) {
+            res.status(500).json({ error: 'Failed to transcribe audio' });
+        }
     }
 })
 

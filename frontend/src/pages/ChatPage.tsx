@@ -95,13 +95,42 @@ export default function ChatPage(){
             })
 
             if (response.ok) {
-                const data = await response.json()
-                const newMessage: Message = {
-                    id: data.message.id,
-                    content: data.message.content,
-                    enhancedPrompt: data.message.enhancedPrompt
+                // const data = await response.json()
+                // const newMessage: Message = {
+                //     id: data.message.id,
+                //     content: data.message.content,
+                //     enhancedPrompt: data.message.enhancedPrompt
+                // }
+                // setMessages(prevMessages => [newMessage,...prevMessages])
+                const reader = response.body?.getReader()
+                const decoder = new TextDecoder()
+                let fullResponse = ''
+
+                const placeholderId = Date.now()
+                const newMessage: Message = { 
+                    id: placeholderId, 
+                    content: 'User audio processed...', // Placeholder content
+                    enhancedPrompt: '' 
+                }; 
+
+                setMessages(prevMessages => [...prevMessages,newMessage])
+
+                while (reader) {
+                    const result = await reader.read();
+                    if (result.done) break;
+
+                    const chunk = decoder.decode(result.value);
+                    fullResponse += chunk;
+                    
+                    setMessages(prev => 
+                        prev.map(msg => 
+                            msg.id === placeholderId ? {...msg, enhancedPrompt: fullResponse} : msg
+                        )
+                    );
                 }
-                setMessages(prevMessages => [newMessage,...prevMessages])
+
+                await navigator.clipboard.writeText(fullResponse)
+                console.log("🫡 Your enhanced Prompt is copied to clipboard")
 
                 if (isProjectJustCreated) {
                     const newTitle = generateTitleFromText(newMessage.content)
