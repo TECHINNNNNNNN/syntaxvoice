@@ -264,6 +264,8 @@ app.post('/transcribe',authenticateToken, upload.single('audio'), async (req, re
             )
         }
 
+
+
         const messages = [
             {
                 role: 'system',
@@ -292,6 +294,7 @@ app.post('/transcribe',authenticateToken, upload.single('audio'), async (req, re
             { role: 'user', content: `Convert this casual speech into a structured coding prompt, considering our previous conversation: "${transcript.text}"` }
         ]
 
+
         const result = await streamText({
             model: openai('gpt-4'),
             messages: messages,
@@ -300,6 +303,10 @@ app.post('/transcribe',authenticateToken, upload.single('audio'), async (req, re
 
         res.setHeader('Content-Type','text/plain; charset=utf-8')
         res.setHeader('Transfer-Encoding', 'chunked')
+
+                res.write(JSON.stringify({originalTranscript: transcript.text}) + '\n---\n')
+
+
         
         let enhancedPrompt = ''
         for await (const textPart of result.textStream) {

@@ -69,7 +69,7 @@ export default function ChatPage(){
             const newProjectData = {name: `New Project ${new Date().toLocaleString()}`}
             const createdProject = await createProject(newProjectData)
             if (createdProject) {
-                currentProjectId = createdProject.id
+                currentProjectId = createdProject.id.toString()
                 setIsNewChat(false)
                 isProjectJustCreated = true
                 navigate(`/project/${currentProjectId}`, {replace: true})
@@ -104,12 +104,14 @@ export default function ChatPage(){
                 // setMessages(prevMessages => [newMessage,...prevMessages])
                 const reader = response.body?.getReader()
                 const decoder = new TextDecoder()
-                let fullResponse = ''
+                let buffer = ''
+                let headerProcessed = false;
+
 
                 const placeholderId = Date.now()
                 const newMessage: Message = { 
                     id: placeholderId, 
-                    content: 'User audio processed...', // Placeholder content
+                    content: ' processing...', // Placeholder content
                     enhancedPrompt: '' 
                 }; 
 
@@ -119,17 +121,34 @@ export default function ChatPage(){
                     const result = await reader.read();
                     if (result.done) break;
 
-                    const chunk = decoder.decode(result.value);
-                    fullResponse += chunk;
-                    
-                    setMessages(prev => 
-                        prev.map(msg => 
-                            msg.id === placeholderId ? {...msg, enhancedPrompt: fullResponse} : msg
+                    buffer += decoder.decode(result.value, { stream: true });
+
+                   if (!headerProcessed){
+                    const delimiterIndex = buffer.indexOf('\n---\n')
+                    if (delimiterIndex !== -1){
+                        const headerJson = buffer.substring(0,delimiterIndex)
+                        const {originalTranscript} = JSON.parse(headerJson)
+
+                        setMessages(prev => prev.map(msn => 
+                            msn.id === placeholderId ? {...msn,content: originalTranscript} : msn
+                        ))
+
+                        buffer = buffer.substring(delimiterIndex + 5);
+                        headerProcessed = true;
+                    }
+                   }
+
+                   if (headerProcessed) {
+                        setMessages(prev => 
+                            prev.map(msg => 
+                                msg.id === placeholderId ? {...msg, enhancedPrompt: buffer} : msg
+                            )
                         )
-                    );
+                   }
+                    
                 }
 
-                await navigator.clipboard.writeText(fullResponse)
+                await navigator.clipboard.writeText(buffer)
                 console.log("🫡 Your enhanced Prompt is copied to clipboard")
 
                 if (isProjectJustCreated) {
@@ -155,8 +174,8 @@ export default function ChatPage(){
                         <h1>Project: {project?.name}</h1>
                         <p>{project?.description}</p>
                         <div className="message-list">
-                        {messages.map((msg,i) => (
-                                <div key={i} className="message">
+                        {messages.map((msg) => (
+                                <div key={msg.id} className="message">
                                     <p><strong>Original:</strong> {msg.content}</p>
                                     <p><strong>Enhanced:</strong> {msg.enhancedPrompt}</p>
                                 </div>
