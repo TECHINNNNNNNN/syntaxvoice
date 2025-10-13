@@ -3,7 +3,8 @@ import { useParams,useNavigate } from 'react-router-dom'
 import { useProjects } from '../Hooks/useProjects'
 import Sidebar from '../components/Sidebar'
 import InputButton from '../components/InputButton'
-import { set } from 'zod'
+import ProjectSettingsModal from '../components/ProjectSettingsModal'
+import { Cog } from 'lucide-react';
 
 type Message = {
     id: number;
@@ -17,11 +18,14 @@ export default function ChatPage(){
     const {projectId} = useParams()
     const navigate = useNavigate()
     const [loading, setLoading] = useState(true)
-    const {createProject, projects, loading: projectsLoading, error: errorProjectsLoading, updateProject} = useProjects()
+    const {createProject, projects, loading: projectsLoading, error: errorProjectsLoading, updateProject, updateProjectDetails} = useProjects()
     const [isNewChat, setIsNewChat] = useState(projectId === 'new')
     const [messages, setMessages] = useState<Message[]>([])
     const [error, setError] = useState<string | null>(null)
     const [project, setProject] = useState<{name: string, description?: string} | null>(null)
+    const [isSettingModalOpen, setIsSettingModalOpen] = useState<boolean>(false)
+    const projectIdNumber = Number(projectId)
+    let projectNameFromAudio: string  =  ''
 
     useEffect(() => {
         const isNew = projectId === 'new'
@@ -39,6 +43,7 @@ export default function ChatPage(){
                     if (response.ok) {
                         const responseData = await response.json()
                         setMessages(responseData.project.messages || [])
+                        setProject(responseData.project)
                         setLoading(false)
                     } else {
                         setError('Failed to fetch messages')
@@ -128,10 +133,12 @@ export default function ChatPage(){
                     if (delimiterIndex !== -1){
                         const headerJson = buffer.substring(0,delimiterIndex)
                         const {originalTranscript} = JSON.parse(headerJson)
+                        projectNameFromAudio = originalTranscript
 
                         setMessages(prev => prev.map(msn => 
                             msn.id === placeholderId ? {...msn,content: originalTranscript} : msn
                         ))
+
 
                         buffer = buffer.substring(delimiterIndex + 5);
                         headerProcessed = true;
@@ -145,18 +152,20 @@ export default function ChatPage(){
                             )
                         )
                    }
+
+                   if (isProjectJustCreated) {
+                        const newTitle = generateTitleFromText(projectNameFromAudio)
+                        const updatedProject = {projectId: Number(currentProjectId), name: newTitle, description: project?.description}
+                        await updateProject(updatedProject)
+                        setProject({name: newTitle, description: project?.description})
+                    }
+
                     
                 }
 
                 await navigator.clipboard.writeText(buffer)
                 console.log("🫡 Your enhanced Prompt is copied to clipboard")
 
-                if (isProjectJustCreated) {
-                    const newTitle = generateTitleFromText(newMessage.content)
-                    const updatedProject = {projectId: Number(currentProjectId), name: newTitle, description: project?.description}
-                    await updateProject(updatedProject)
-                    setProject({name: newTitle, description: project?.description})
-                }
             }else {
                 console.error('Failed to transcribe audio')
                 setError('Failed to transcribe audio')
@@ -167,11 +176,30 @@ export default function ChatPage(){
         }
     }
 
+    const handleUpdateProjet = async (data: {name?:string, description?:string,techStack?:string}) => {
+        await updateProjectDetails({projectId: projectIdNumber, ...data})
+        setIsSettingModalOpen(false)
+    }
+
     return (
-        <div className="flex">
-                <Sidebar projects={projects} loading={projectsLoading} error={errorProjectsLoading} createProject={createProject} /> 
-                <main className="flex-1 p-8">
-                        <h1>Project: {project?.name}</h1>
+        <>
+            <div className="flex">
+                    <Sidebar projects={projects} loading={projectsLoading} error={errorProjectsLoading} createProject={createProject} /> 
+                    <main className="flex-1 p-8">
+                        <div className='flex flex-row justify-between'>
+                            <h1>{project?.name.startsWith('New Project ') ? '' : project ? `Project: ${project?.name}` : ''}</h1>
+                            {project && 
+                                <button
+                                    onClick={() => setIsSettingModalOpen(true)}
+                                    disabled={!project}
+                                    aria-disabled={!project}
+                                    className={!project ? 'opacity-50 cursor-not-allowed' : ''}
+                                    >
+                                    <Cog className="h-6 w-6 text-gray-400 hover:text-white" />
+                                </button>
+                             }
+                            
+                        </div>
                         <p>{project?.description}</p>
                         <div className="message-list">
                         {messages.map((msg) => (
@@ -184,7 +212,14 @@ export default function ChatPage(){
                         <div className='fixed bottom-10 w-full flex justify-center'>
                             <InputButton onAudioCapture={handleAudioCapture} />
                         </div>
-                </main>
-        </div>
+                    </main>
+            </div>
+            <ProjectSettingsModal
+                isOpen={isSettingModalOpen}
+                onClose={() => setIsSettingModalOpen(false)}
+                onSubmit={handleUpdateProjet}
+                project={project}
+            />
+        </>
     )
 }

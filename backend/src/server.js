@@ -187,7 +187,7 @@ app.get('/projects', authenticateToken, async (req, res) => {
 
 app.patch('/project/:id', authenticateToken, async (req, res) => {
     const {id} = req.params
-    const {name, description} = req.body
+    const {name, description, techStack} = req.body
     const userId = req.user?.userId
 
     if (!id || !userId) {
@@ -204,7 +204,7 @@ app.patch('/project/:id', authenticateToken, async (req, res) => {
 
         const updatatedProject = await prisma.project.update({
             where: { id: Number(id) },
-            data: { name, description }
+            data: { name, description , techStack}
         })
 
         res.status(200).json({ message: "Project updated successfully", project: updatatedProject })
@@ -213,16 +213,16 @@ app.patch('/project/:id', authenticateToken, async (req, res) => {
     }
 })
 
-app.post('/enhance-project-context', authenticateToken, async (req,res) => {
-    const { projectId, projectDescription, techStack } = req.body
+app.patch('/enhance-project-context', authenticateToken, async (req,res) => {
+    const { projectId,name, projectDescription, techStack } = req.body
 
     try {
-        await prisma.project.update({
+        const updatedDetailsProject = await prisma.project.update({
             where: { id: Number(projectId) },
-            data: { description: projectDescription, techStack  }
+            data: {name,  description: projectDescription, techStack  }
         })
 
-        res.status(200).json({message: "Project context enhanced successfully"})
+        res.status(200).json({message: "Project context enhanced successfully", project: updatedDetailsProject})
     } catch (error) {
         res.status(500).json({error: "Failed to enhance project context"})
     }
@@ -304,7 +304,7 @@ app.post('/transcribe',authenticateToken, upload.single('audio'), async (req, re
         res.setHeader('Content-Type','text/plain; charset=utf-8')
         res.setHeader('Transfer-Encoding', 'chunked')
 
-                res.write(JSON.stringify({originalTranscript: transcript.text}) + '\n---\n')
+        res.write(JSON.stringify({originalTranscript: transcript.text}) + '\n---\n')
 
 
         

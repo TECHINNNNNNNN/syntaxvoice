@@ -1,5 +1,5 @@
 import {useState, useEffect} from 'react'
-import { useNavigate } from 'react-router-dom';
+
 
 
 
@@ -15,7 +15,7 @@ export function useProjects() {
     const [projects, setProjects] = useState<Project[]>([])
     const [loading, setLoading] = useState<boolean>(true)
     const [error, setError] = useState<string | null>(null)
-    const navigate = useNavigate()
+
 
     useEffect(() => {
         const fetchProjects = async () => {
@@ -69,7 +69,7 @@ export function useProjects() {
         }
     }
 
-    const updateProject = async (updatedProject: { projectId: number, name: string, description: string | undefined}) => {
+    const updateProject = async (updatedProject: { projectId: number, name: string, description?: string,techStack?:string}) => {
         try {
             const response = await fetch(`${BASE_URL}/project/${updatedProject.projectId}`, {
                 method: 'PATCH',
@@ -79,7 +79,8 @@ export function useProjects() {
                 },
                 body: JSON.stringify({
                     name: updatedProject.name,
-                    description: updatedProject.description
+                    description: updatedProject.description,
+                    techStack: updatedProject.techStack
                 })
             })
             if (!response.ok) {
@@ -114,7 +115,43 @@ export function useProjects() {
         }
     }
 
+    const updateProjectDetails = async (updatedData: { projectId: number, name?: string, description?: string,techStack?:string}) => {
+        try {
+            const response = await fetch(`${BASE_URL}/enhance-project-context`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({
+                    name: updatedData.name,
+                    description: updatedData.description,
+                    techStack: updatedData.techStack
+                })
 
-    return {projects, loading, error, createProject, updateProject}
+            })
+
+            if (!response.ok) {
+                setError('Failed to update project details')
+            }
+
+
+
+            const responseData = await response.json()
+            
+            setProjects(currentProjects => currentProjects.map(p => 
+                p.id === updatedData.projectId ? {...p, ...responseData.project} : p
+            ))
+
+            return responseData
+        } catch (error) {
+            setError('An error occurred while updating the project details')
+            console.error('Error updating project:', error)
+
+        }
+    }
+
+
+    return {projects, loading, error, createProject, updateProject, updateProjectDetails}
 
 }
