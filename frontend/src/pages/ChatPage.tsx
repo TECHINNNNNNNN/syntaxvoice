@@ -177,7 +177,9 @@ export default function ChatPage(){
     }
 
     const handleUpdateProjet = async (data: {name?:string, description?:string,techStack?:string}) => {
-        await updateProjectDetails({projectId: projectIdNumber, ...data})
+        console.log(`projectId: ${projectId}, name: ${data.name}, description: ${data.description}, techStack: ${data.techStack}`)
+        const updatedDetails = await updateProjectDetails({projectId: projectIdNumber, ...data})
+        setProject(updatedDetails)
         setIsSettingModalOpen(false)
     }
 

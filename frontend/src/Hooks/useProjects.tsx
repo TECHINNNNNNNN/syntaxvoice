@@ -116,6 +116,7 @@ export function useProjects() {
     }
 
     const updateProjectDetails = async (updatedData: { projectId: number, name?: string, description?: string,techStack?:string}) => {
+        console.log(`projectId: ${updatedData.projectId} ${typeof updatedData.projectId}, name: ${updatedData.name}, description: ${updatedData.description}, techStack: ${updatedData.techStack}`)
         try {
             const response = await fetch(`${BASE_URL}/enhance-project-context`, {
                 method: 'PATCH',
@@ -124,6 +125,7 @@ export function useProjects() {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 },
                 body: JSON.stringify({
+                    projectId: updatedData.projectId,
                     name: updatedData.name,
                     description: updatedData.description,
                     techStack: updatedData.techStack
@@ -138,12 +140,14 @@ export function useProjects() {
 
 
             const responseData = await response.json()
+
+
             
             setProjects(currentProjects => currentProjects.map(p => 
                 p.id === updatedData.projectId ? {...p, ...responseData.project} : p
             ))
 
-            return responseData
+            return responseData.project
         } catch (error) {
             setError('An error occurred while updating the project details')
             console.error('Error updating project:', error)

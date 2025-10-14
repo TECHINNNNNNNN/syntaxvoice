@@ -214,12 +214,13 @@ app.patch('/project/:id', authenticateToken, async (req, res) => {
 })
 
 app.patch('/enhance-project-context', authenticateToken, async (req,res) => {
-    const { projectId,name, projectDescription, techStack } = req.body
+    const { projectId,name, description, techStack } = req.body
+    console.log(`projectId: ${projectId}, description: ${description}, techStack: ${techStack}`)
 
     try {
         const updatedDetailsProject = await prisma.project.update({
             where: { id: Number(projectId) },
-            data: {name,  description: projectDescription, techStack  }
+            data: {name, description, techStack  }
         })
 
         res.status(200).json({message: "Project context enhanced successfully", project: updatedDetailsProject})
