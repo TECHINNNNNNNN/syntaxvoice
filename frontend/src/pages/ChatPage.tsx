@@ -14,6 +14,24 @@ type Message = {
 
 const BASE_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:1234'
 
+function escapeHtml(input: string): string {
+    return input
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+}
+
+function highlightXml(text: string): string {
+    const escaped = escapeHtml(text)
+    // Color angle brackets, slashes and tag names. Attributes left as-is for subtlety
+    return escaped.replace(/&lt;(\/)?([a-zA-Z0-9_-]+)([^&]*?)&gt;/g, (_m, slash, tag, rest) => {
+        const slashPart = slash ? '<span class="syntax-slash">/</span>' : ''
+        return `<span class="syntax-angle">&lt;</span>${slashPart}<span class="syntax-tag">${tag}</span>${rest}<span class="syntax-angle">&gt;</span>`
+    })
+}
+
 export default function ChatPage(){
     const {projectId} = useParams()
     const navigate = useNavigate()
@@ -252,8 +270,25 @@ export default function ChatPage(){
                             <div key={msg.id} className="glass-subtle card-rounded p-4">
                                 <p className="text-sm mb-2"><span className="font-medium text-white/90">Original:</span> {msg.content}</p>
                                 <div className="relative mt-2">
-                                    <div className="glass card-rounded p-3 font-mono text-[13px] leading-relaxed whitespace-pre-wrap">
-                                        {msg.enhancedPrompt}
+                                    {/* Editor chrome */}
+                                    <div className="bg-black/70 border border-white/10 rounded-md overflow-hidden">
+                                        <div className="flex items-center gap-2 px-3 py-2 border-b border-white/10">
+                                            <span className="h-2.5 w-2.5 rounded-full bg-red-500/80"></span>
+                                            <span className="h-2.5 w-2.5 rounded-full bg-amber-400/80"></span>
+                                            <span className="h-2.5 w-2.5 rounded-full bg-green-500/80"></span>
+                                            <span className="ml-2 text-[11px] text-white/60">enhanced_prompt.xml</span>
+                                        </div>
+                                        {/* Code area */}
+                                        <div className="flex">
+                                            <div className="select-none text-white/40 bg-black/60 px-3 py-3 text-[12px] leading-relaxed">
+                                                {msg.enhancedPrompt.split('\n').map((_, i) => (
+                                                    <div key={i} className="text-right w-8">{i + 1}</div>
+                                                ))}
+                                            </div>
+                                            <pre className="whitespace-pre-wrap font-mono text-[13px] leading-relaxed p-3 bg-black/85 text-white/90 flex-1 overflow-x-auto">
+                                                <span dangerouslySetInnerHTML={{ __html: highlightXml(msg.enhancedPrompt) }} />
+                                            </pre>
+                                        </div>
                                     </div>
                                     <button
                                         aria-label="Copy enhanced prompt"
