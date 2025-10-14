@@ -42,9 +42,15 @@ const InputButton = ({onAudioCapture} : InputButtonProps) => {
     return (
         <div className="flex items-center justify-center">
             <button
-                className={`size-10 border-4 border-red-400 rounded-full ${recording ? 'bg-red-500' : ''}`}
+                aria-label={recording ? 'Stop recording' : 'Start recording'}
+                className={`relative h-14 w-14 rounded-full glass ${recording ? 'bg-red-500/70' : 'bg-white/10'} transition-colors`}
                 onClick={recording ? handleStop : handleStart}
-            />
+            >
+                <span className={`absolute inset-0 rounded-full ${recording ? 'animate-ping bg-red-400/30' : ''}`} />
+                <span className={`absolute inset-1 rounded-full flex items-center justify-center ${recording ? 'bg-red-500' : 'bg-white/20'}`}>
+                    <span className={`block ${recording ? 'h-3 w-3 rounded-sm bg-white' : 'h-4 w-4 rounded-full bg-white'}`} />
+                </span>
+            </button>
         </div>
     )
 }

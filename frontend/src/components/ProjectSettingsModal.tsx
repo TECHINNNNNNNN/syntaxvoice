@@ -21,7 +21,7 @@ type ProjectModalProps = {
 
 export default function ProjectSettingsModal({isOpen,onClose,onSubmit,project}: ProjectModalProps) {
 
-    const {register,handleSubmit,formState:{errors},reset} = useForm<settingsInputs>({
+    const {register,handleSubmit,reset} = useForm<settingsInputs>({
         resolver: zodResolver(settingsSchema),
         defaultValues: {
             name: project?.name || '',
@@ -40,25 +40,25 @@ export default function ProjectSettingsModal({isOpen,onClose,onSubmit,project}: 
     if (!isOpen) return null;
 
     return (
-        <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
-            <div className='bg-gray-500 p-6 rounded-lg w-full max-w-md'>
-                <h2 className='text-2xl font-bold mb-4'>Project Settings</h2>
+        <div className='fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50'>
+            <div className='glass card-rounded p-6 w-full max-w-md'>
+                <h2 className='text-2xl font-semibold mb-4'>Project Settings</h2>
                 <form onSubmit={handleSubmit(onSubmit)}>
                     <div className='mb-4'>
                         <label htmlFor="name" className='block mb-1'>Name</label>
-                        <input type="text" id='name' placeholder={'My Awesome Project'} className='w-full p-2 rounded bg-gray-800 border border-gray-600' {...register('name')} />
+                        <input type="text" id='name' placeholder={'My Awesome Project'} className='w-full p-2 rounded bg-white/10 border border-white/10 text-white placeholder-white/50' {...register('name')} />
                     </div>
                     <div className='mb-4'>
                         <label htmlFor="description" className='block mb-1'>Description</label>
-                        <input type="text" id='description' placeholder={'My personal portfolio project'} className='p-2 rounded bg-gray-800 border border-gray-600' {...register('description')} />
+                        <input type="text" id='description' placeholder={'My personal portfolio project'} className='w-full p-2 rounded bg-white/10 border border-white/10 text-white placeholder-white/50' {...register('description')} />
                     </div>
                     <div className='mb-4'>
                         <label htmlFor="techStack" className='block mb-1'>Tech Stack</label>
-                        <input type="text" id='techStack' placeholder="React, Node.js, Tailwind CSS" className='w-full p-2 rounded bg-gray-800 border border-gray-600' {...register('techStack')} />
+                        <input type="text" id='techStack' placeholder="React, Node.js, Tailwind CSS" className='w-full p-2 rounded bg-white/10 border border-white/10 text-white placeholder-white/50' {...register('techStack')} />
                     </div>
-                    <div className='flex justify-end gap-4'>
-                        <button type="button" onClick={onClose} className="p-2 bg-red-400 text-white">Cancel</button>
-                        <button type="submit" className="p-2 bg-indigo-500 text-white">Save Changes</button>
+                    <div className='flex justify-end gap-3'>
+                        <button type="button" onClick={onClose} className="px-3 py-2 bg-white/10 hover:bg-white/15 text-white rounded">Cancel</button>
+                        <button type="submit" className="px-3 py-2 bg-amber-600/80 hover:bg-amber-600 text-white rounded">Save Changes</button>
                     </div>
                 </form>
 

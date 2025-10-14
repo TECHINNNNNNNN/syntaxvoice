@@ -1,4 +1,4 @@
-import {useState} from 'react'
+import { } from 'react'
 import {type Project} from '../Hooks/useProjects'
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -12,7 +12,6 @@ type SidebarProps = {
 
 
 export default function Sidebar({projects, loading, error}: SidebarProps) {
-    const [isOpen, setIsOpen] = useState(false)
 
     const navigate = useNavigate()
 
@@ -29,25 +28,17 @@ export default function Sidebar({projects, loading, error}: SidebarProps) {
 
     return (
         <>
-            {!isOpen && (
-            <div
-            className="fixed top-0 left-0 h-full w-4 bg-transparent z-20"
-            onMouseEnter={() => setIsOpen(true)}
-            />
-            )}
+            {/* Sidebar is now always visible; hover rail removed */}
 
             {/* Main Sidebar */}
             <aside
-                className={`fixed top-0 left-0 h-full bg-gray-800 text-white flex flex-col transition-all duration-300 ease-in-out z-30 ${
-                isOpen ? 'w-64' : 'w-0 overflow-hidden'
-                }`}
-                onMouseLeave={() => setIsOpen(false)}
+                className={`max-w-sm w-72 h-screen max-h-screen sticky top-0 text-white flex flex-col rounded-r-lg glass`}
             >
-                <div className="p-4">
+                <div className="p-4 glass-divider">
                 <h2 className="text-xl font-bold">Projects</h2>
                 <button
                     onClick={() => handleProjectCreaetion()}
-                    className="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+                    className="mt-4 w-full bg-amber-500/80 hover:bg-amber-500 text-white py-2 px-3 rounded"
                 >
                     + New Project
                 </button>
@@ -56,11 +47,11 @@ export default function Sidebar({projects, loading, error}: SidebarProps) {
                 {/* Project List */}
                 <nav className="flex-1 p-4 overflow-y-auto">
                 {loading && <p>Loading projects...</p>}
-                {error && <p className="text-red-400">{error}</p>}
+                {error && <p className="text-amber-300">{error}</p>}
                 <ul>
                     {projects.map((project) => (
                         <Link to={`/project/${project.id}`}>
-                            <li key={project.id} className="p-2 hover:bg-gray-700 rounded cursor-pointer">
+                            <li key={project.id} className="p-2 rounded cursor-pointer glass-subtle hover:bg-white/5 mb-2 text-white/90">
                                 {project.name}
                             </li>
                         </Link>
@@ -69,8 +60,8 @@ export default function Sidebar({projects, loading, error}: SidebarProps) {
                 </nav>
 
                 <div className='mt-auto p-4'>
-                    <button onClick={handleLogout} className="w-full bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded">
-                        Logout
+                    <button onClick={handleLogout} className="w-full bg-amber-600/80 hover:bg-amber-600 text-white py-2 px-3 rounded">
+                        Sign out
                     </button>
                 </div>
             </aside>

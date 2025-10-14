@@ -24,6 +24,7 @@ export default function ChatPage(){
     const [error, setError] = useState<string | null>(null)
     const [project, setProject] = useState<{name: string, description?: string} | null>(null)
     const [isSettingModalOpen, setIsSettingModalOpen] = useState<boolean>(false)
+    const [showCopiedToast, setShowCopiedToast] = useState<boolean>(false)
     const projectIdNumber = Number(projectId)
     let projectNameFromAudio: string  =  ''
 
@@ -61,6 +62,31 @@ export default function ChatPage(){
             setLoading(false)
         }
     },[projectId])
+
+    // Inline feedback for loading and errors to keep UI responsive
+    if (loading) {
+        return (
+            <div className="flex">
+                <Sidebar projects={projects} loading={projectsLoading} error={errorProjectsLoading} createProject={createProject} /> 
+                <main className="flex-1 p-6 md:p-10">
+                    <div className='glass card-rounded px-4 py-3'>Loading…</div>
+                </main>
+            </div>
+        )
+    }
+
+    if (error) {
+        return (
+            <div className="flex">
+                <Sidebar projects={projects} loading={projectsLoading} error={errorProjectsLoading} createProject={createProject} /> 
+                <main className="flex-1 p-6 md:p-10">
+                    <div className='glass card-rounded px-4 py-3 text-red-300'>
+                        {error}
+                    </div>
+                </main>
+            </div>
+        )
+    }
 
     const generateTitleFromText = (text:string) => {
         return text.split(' ').slice(0, 5).join(' ') + '...';
@@ -164,6 +190,8 @@ export default function ChatPage(){
                 }
 
                 await navigator.clipboard.writeText(buffer)
+                setShowCopiedToast(true)
+                setTimeout(() => setShowCopiedToast(false), 2000)
                 console.log("🫡 Your enhanced Prompt is copied to clipboard")
 
             }else {
@@ -186,35 +214,52 @@ export default function ChatPage(){
     return (
         <>
             <div className="flex">
-                    <Sidebar projects={projects} loading={projectsLoading} error={errorProjectsLoading} createProject={createProject} /> 
-                    <main className="flex-1 p-8">
-                        <div className='flex flex-row justify-between'>
-                            <h1>{project?.name.startsWith('New Project ') ? '' : project ? `Project: ${project?.name}` : ''}</h1>
-                            {project && 
-                                <button
-                                    onClick={() => setIsSettingModalOpen(true)}
-                                    disabled={!project}
-                                    aria-disabled={!project}
-                                    className={!project ? 'opacity-50 cursor-not-allowed' : ''}
-                                    >
-                                    <Cog className="h-6 w-6 text-gray-400 hover:text-white" />
-                                </button>
-                             }
-                            
+                <Sidebar projects={projects} loading={projectsLoading} error={errorProjectsLoading} createProject={createProject} /> 
+                <main className="flex-1 flex flex-col p-6">
+                    <div className='glass card-rounded px-4 py-3 mb-6 flex items-center justify-between'>
+                        <div>
+                            <h1 className="text-lg md:text-xl font-semibold">
+                                {project?.name?.startsWith('New Project ') ? 'New Project' : project ? project?.name : 'New Project'}
+                            </h1>
+                            {project?.description && (
+                                <p className="text-sm text-white/70 mt-1">{project.description}</p>
+                            )}
                         </div>
-                        <p>{project?.description}</p>
-                        <div className="message-list">
+                        {project && (
+                            <button
+                                onClick={() => setIsSettingModalOpen(true)}
+                                disabled={!project}
+                                aria-disabled={!project}
+                                className={!project ? 'opacity-50 cursor-not-allowed' : ''}
+                            >
+                                <Cog className="h-6 w-6 text-gray-300 hover:text-white" />
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="space-y-3">
                         {messages.map((msg) => (
-                                <div key={msg.id} className="message">
-                                    <p><strong>Original:</strong> {msg.content}</p>
-                                    <p><strong>Enhanced:</strong> {msg.enhancedPrompt}</p>
+                            <div key={msg.id} className="glass-subtle card-rounded p-4">
+                                <p className="text-sm mb-2"><span className="font-medium text-white/90">Original:</span> {msg.content}</p>
+                                <div className="text-sm whitespace-pre-wrap">
+                                    <span className="font-medium text-white/90">Enhanced:</span> {msg.enhancedPrompt}
                                 </div>
+                            </div>
                         ))}
+                    </div>
+
+                    {/* Center mic button */}
+                    <div className='flex flex-1 items-end justify-center'>
+                        <InputButton onAudioCapture={handleAudioCapture} />
+                    </div>
+
+                    {/* Copy toast */}
+                    {showCopiedToast && (
+                        <div className='fixed bottom-24 left-1/2 -translate-x-1/2 glass card-rounded px-4 py-2 text-sm'>
+                            Enhanced prompt copied to clipboard
                         </div>
-                        <div className='fixed bottom-10 w-full flex justify-center'>
-                            <InputButton onAudioCapture={handleAudioCapture} />
-                        </div>
-                    </main>
+                    )}
+                </main>
             </div>
             <ProjectSettingsModal
                 isOpen={isSettingModalOpen}
