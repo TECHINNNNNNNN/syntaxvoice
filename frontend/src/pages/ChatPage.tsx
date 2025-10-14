@@ -278,7 +278,13 @@ export default function ChatPage(){
                     <div className="flex-1 overflow-y-auto space-y-3 pr-1">
                         {messages.map((msg) => (
                             <div key={msg.id} className="glass-subtle card-rounded p-4">
-                                <p className="text-sm mb-2"><span className="font-medium text-white/90">Original:</span> {msg.content}</p>
+                                <p className="text-xs uppercase tracking-wide text-white/60 mb-3">Original</p>
+                                <div className="relative mb-3">
+                                    <div className="bg-black/70 border border-white/10 rounded-md p-3 text-sm leading-relaxed text-white/90 whitespace-pre-wrap">
+                                        {msg.content}
+                                    </div>
+                                    <span className="absolute left-0 top-0 bottom-0 w-1.5 rounded-l-md bg-gradient-to-b from-amber-400/70 to-amber-500/50" />
+                                </div>
                                 <div className="relative mt-2">
                                     {/* Editor chrome */}
                                     <div className="bg-black/70 border border-white/10 rounded-md overflow-hidden">

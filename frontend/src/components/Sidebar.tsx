@@ -51,7 +51,7 @@ export default function Sidebar({projects, loading, error}: SidebarProps) {
                 <ul>
                     {projects.map((project) => (
                         <Link to={`/project/${project.id}`}>
-                            <li key={project.id} className="p-2 rounded cursor-pointer mb-2 text-white/90">
+                            <li key={project.id} className="p-2 text-sm rounded cursor-pointer mb-2 text-white/90">
                                 {project.name}
                             </li>
                         </Link>
@@ -60,7 +60,7 @@ export default function Sidebar({projects, loading, error}: SidebarProps) {
                 </nav>
 
                 <div className='mt-auto p-4'>
-                    <button onClick={handleLogout} className="w-full bg-amber-600/80 hover:bg-amber-600 text-white py-2 px-3 rounded">
+                    <button onClick={handleLogout} className="w-full bg-amber-600/80 hover:bg-amber-600 text-white py-2 px-3 rounded-3xl">
                         Sign out
                     </button>
                 </div>
