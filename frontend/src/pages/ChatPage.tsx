@@ -1,4 +1,4 @@
-import {useState, useEffect} from 'react'
+import {useState, useEffect, useRef} from 'react'
 import { useParams,useNavigate } from 'react-router-dom'
 import { useProjects } from '../Hooks/useProjects'
 import Sidebar from '../components/Sidebar'
@@ -43,6 +43,7 @@ export default function ChatPage(){
     const [project, setProject] = useState<{name: string, description?: string} | null>(null)
     const [isSettingModalOpen, setIsSettingModalOpen] = useState<boolean>(false)
     const [showCopiedToast, setShowCopiedToast] = useState<boolean>(false)
+    const bottomRef = useRef<HTMLDivElement | null>(null)
     const projectIdNumber = Number(projectId)
     let projectNameFromAudio: string  =  ''
 
@@ -80,6 +81,11 @@ export default function ChatPage(){
             setLoading(false)
         }
     },[projectId])
+
+    // Auto-scroll: keep the latest message visible by scrolling a bottom sentinel into view
+    useEffect(() => {
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }, [messages.length])
 
     // Inline feedback for loading and errors to keep UI responsive
     if (loading) {
@@ -165,6 +171,8 @@ export default function ChatPage(){
                 }; 
 
                 setMessages(prevMessages => [...prevMessages,newMessage])
+                // scroll after DOM updates
+                requestAnimationFrame(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }))
 
                 while (reader) {
                     const result = await reader.read();
@@ -182,7 +190,7 @@ export default function ChatPage(){
                         setMessages(prev => prev.map(msn => 
                             msn.id === placeholderId ? {...msn,content: originalTranscript} : msn
                         ))
-
+                        requestAnimationFrame(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }))
 
                         buffer = buffer.substring(delimiterIndex + 5);
                         headerProcessed = true;
@@ -195,6 +203,8 @@ export default function ChatPage(){
                                 msg.id === placeholderId ? {...msg, enhancedPrompt: buffer} : msg
                             )
                         )
+                        // keep following the stream to bottom
+                        requestAnimationFrame(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }))
                    }
 
                    if (isProjectJustCreated) {
@@ -265,7 +275,7 @@ export default function ChatPage(){
                         )}
                     </div>
 
-                    <div className="space-y-3">
+                    <div className="flex-1 overflow-y-auto space-y-3 pr-1">
                         {messages.map((msg) => (
                             <div key={msg.id} className="glass-subtle card-rounded p-4">
                                 <p className="text-sm mb-2"><span className="font-medium text-white/90">Original:</span> {msg.content}</p>
@@ -300,10 +310,11 @@ export default function ChatPage(){
                                 </div>
                             </div>
                         ))}
+                        <div ref={bottomRef} />
                     </div>
 
                     {/* Center mic button */}
-                    <div className='flex flex-1 items-end justify-center'>
+                    <div className='flex items-end justify-center mt-5'>
                         <InputButton onAudioCapture={handleAudioCapture} />
                     </div>
 
