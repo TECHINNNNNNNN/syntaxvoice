@@ -22,13 +22,14 @@ const app = express()
 
 const PORT = process.env.PORT || 1234
 const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:5173'
+const ALLOWED_ORIGINS = CORS_ORIGIN.split(',').map(o => o.trim()).filter(Boolean)
 const TRANSCRIPTION_MODEL = process.env.TRANSCRIPTION_MODEL || 'whisper-1'
 const CHAT_MODEL = process.env.CHAT_MODEL || 'gpt-4'
 
 const upload = multer({ storage: multer.memoryStorage() })
 
 const corsOption = {
-    origin: CORS_ORIGIN,
+    origin: ALLOWED_ORIGINS.length <= 1 ? ALLOWED_ORIGINS[0] : ALLOWED_ORIGINS,
     optionsSuccessStatus: 200
 }
 
