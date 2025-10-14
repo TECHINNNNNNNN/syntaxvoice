@@ -140,13 +140,15 @@ const InputButton = ({onAudioCapture} : InputButtonProps) => {
         <div className="flex items-center justify-center">
             <button
                 aria-label={recording ? 'Stop recording' : 'Start recording'}
-                className={`relative ${recording ? 'h-16 w-40 rounded-full' : 'h-16 w-16 rounded-full'} glass ${recording ? 'bg-amber-600/80' : 'bg-white/10'} transition-all duration-300 ease-out`}
+                className={`relative ${recording ? 'h-16 w-40 rounded-full' : 'h-20 w-20 rounded-full'} glass ${recording ? 'bg-amber-600/80' : 'bg-white/5'} transition-all duration-300 ease-out`}
                 onClick={recording ? handleStop : handleStart}
             >
                 <span ref={rippleRef} />
                 {recording && <span className="mic-glow" />}
-                <span className={recording ? 'pill-ring' : 'mic-ring'} />
-                <span className={`absolute inset-1 rounded-full flex items-center justify-center ${recording ? 'bg-amber-600' : 'bg-white/20'}`}>
+                <span className={recording ? 'pill-ring' : 'mic-ring-pure'} />
+                {!recording && <span className="mic-face" />}
+                {!recording && <span className="mic-highlight" />}
+                <span className={`absolute inset-1 rounded-full flex items-center justify-center ${recording ? 'bg-amber-600' : ''}`}>
                     {recording ? (
                         <div className="flex items-center gap-3 px-4" aria-hidden>
                             <div className="eq-bars-live">
@@ -157,7 +159,26 @@ const InputButton = ({onAudioCapture} : InputButtonProps) => {
                             <span className="text-white/90 text-sm">Listening…</span>
                         </div>
                     ) : (
-                        <span className="block h-4 w-4 rounded-full bg-white" />
+                        <svg className="mic-icon" width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+                            <defs>
+                                <linearGradient id="micGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor="#fff" stopOpacity=".95"/>
+                                    <stop offset="100%" stopColor="#fbbf24" stopOpacity=".85"/>
+                                </linearGradient>
+                                <linearGradient id="outlineGrad" x1="0" y1="0" x2="1" y2="1">
+                                    <stop offset="0%" stopColor="#ffffff" stopOpacity=".9"/>
+                                    <stop offset="100%" stopColor="#ffffff" stopOpacity=".4"/>
+                                </linearGradient>
+                            </defs>
+                            {/* mic capsule */}
+                            <rect x="11" y="6" width="6" height="12" rx="3" fill="url(#micGrad)"/>
+                            <rect x="11" y="6" width="6" height="12" rx="3" stroke="url(#outlineGrad)" strokeWidth="0.6"/>
+                            {/* cradle arc */}
+                            <path d="M7 12.5a7 7 0 1 0 14 0" stroke="url(#outlineGrad)" strokeWidth="1.6" strokeLinecap="round"/>
+                            {/* stem and base */}
+                            <path d="M14 20.5v3.2" stroke="url(#outlineGrad)" strokeWidth="1.6" strokeLinecap="round"/>
+                            <path d="M10.2 23.7h7.6" stroke="url(#outlineGrad)" strokeWidth="1.6" strokeLinecap="round"/>
+                        </svg>
                     )}
                 </span>
             </button>
