@@ -21,11 +21,14 @@ dotenv.config({ path: path.join(__dirname, '..', '.env') })
 const app = express()
 
 const PORT = process.env.PORT || 1234
+const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:5173'
+const TRANSCRIPTION_MODEL = process.env.TRANSCRIPTION_MODEL || 'whisper-1'
+const CHAT_MODEL = process.env.CHAT_MODEL || 'gpt-4'
 
 const upload = multer({ storage: multer.memoryStorage() })
 
 const corsOption = {
-    origin: 'http://localhost:5173',
+    origin: CORS_ORIGIN,
     optionsSuccessStatus: 200
 }
 
@@ -238,7 +241,7 @@ app.post('/transcribe',authenticateToken, upload.single('audio'), async (req, re
         const audioBuffer = new Uint8Array(req.file.buffer)
 
         const transcript = await transcribe({
-            model: openai.transcription('whisper-1'),
+            model: openai.transcription(TRANSCRIPTION_MODEL),
             audio: audioBuffer,
         })
 
@@ -297,7 +300,7 @@ app.post('/transcribe',authenticateToken, upload.single('audio'), async (req, re
 
 
         const result = await streamText({
-            model: openai('gpt-4'),
+            model: openai(CHAT_MODEL),
             messages: messages,
             maxTokens: 1000,
         })

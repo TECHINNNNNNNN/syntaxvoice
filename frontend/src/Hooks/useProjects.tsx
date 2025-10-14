@@ -61,8 +61,10 @@ export function useProjects() {
                 throw new Error('Failed to create project')
             }
 
+            const created = responseData.project
             
-            return responseData.project
+            setProjects(current => [{ id: created.id, name: created.name, description: created.description }, ...current])
+            return created
         } catch (error) {
             console.error('Error creating project:', error)
             setError('An error occurred while creating the project')
