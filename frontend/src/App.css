@@ -140,3 +140,22 @@ body::after {
 .syntax-angle { color: rgba(255,255,255,0.55); }
 .syntax-slash { color: rgba(255,255,255,0.55); }
 .syntax-tag { color: #fbbf24; /* amber-400 */ }
+
+/* Global pointer cursor for clickable elements */
+button,
+button[type],
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+[role="button"],
+a,
+.clickable,
+.icon-button {
+  cursor: pointer;
+}
+
+button[disabled],
+button:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
+}
