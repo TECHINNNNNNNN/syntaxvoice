@@ -35,10 +35,10 @@ export default function Sidebar({projects, loading, error}: SidebarProps) {
                 className={`max-w-sm w-72 h-screen max-h-screen sticky top-0 text-white flex flex-col rounded-r-lg glass-heavy`}
             >
                 <div className="p-4 glass-divider">
-                <h2 className="text-xl font-bold mb-2">Projects</h2>
+                <h2 className="text-xl font-serif mb-2 mt-5">Projects</h2>
                 <button
                     onClick={() => handleProjectCreaetion()}
-                    className="mt-4 w-full bg-white/30 text-white py-2 px-3 rounded-2xl backdrop-blur-3xl"
+                    className="mt-4 w-full bg-white/30 font-sans text-white py-2 px-3 rounded-2xl backdrop-blur-3xl"
                 >
                     + New Project
                 </button>
@@ -51,7 +51,7 @@ export default function Sidebar({projects, loading, error}: SidebarProps) {
                 <ul>
                     {projects.map((project) => (
                         <Link to={`/project/${project.id}`}>
-                            <li key={project.id} className="p-2 text-sm rounded cursor-pointer mb-2 text-white/90">
+                            <li key={project.id} className="p-2 text-sm rounded cursor-pointer mb-2 font-sans text-white/90">
                                 {project.name}
                             </li>
                         </Link>

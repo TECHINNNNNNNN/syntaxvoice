@@ -253,10 +253,10 @@ export default function ChatPage(){
         <>
             <div className="flex">
                 <Sidebar projects={projects} loading={projectsLoading} error={errorProjectsLoading} createProject={createProject} /> 
-                <main className="flex-1 flex flex-col p-6">
-                    <div className='px-4 py-3 mb-6 flex items-center justify-between'>
+                <main className="flex-1 flex flex-col p-6 font-[var(--font-sans)]">
+                    <div className='px-4 py-3 mb-6 flex items-center justify-between font-[var(--font-display)]'>
                         <div>
-                            <h1 className="text-xl md:text-2xl font-semibold">
+                            <h1 className="text-xl md:text-2xl font-display">
                                 {project?.name?.startsWith('New Project ') ? 'New Project' : project ? project?.name : 'New Project'}
                             </h1>
                             {project?.description && (
