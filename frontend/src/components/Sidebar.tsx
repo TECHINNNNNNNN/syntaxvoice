@@ -11,7 +11,7 @@ type SidebarProps = {
 }
 
 
-export default function SignInPage({projects, loading, error}: SidebarProps) {
+export default function Sidebar({projects, loading, error}: SidebarProps) {
     const [isOpen, setIsOpen] = useState(false)
 
     const navigate = useNavigate()
