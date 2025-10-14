@@ -35,10 +35,10 @@ export default function Sidebar({projects, loading, error}: SidebarProps) {
                 className={`max-w-sm w-72 h-screen max-h-screen sticky top-0 text-white flex flex-col rounded-r-lg glass-heavy`}
             >
                 <div className="p-4 glass-divider">
-                <h2 className="text-xl font-bold">Projects</h2>
+                <h2 className="text-xl font-bold mb-2">Projects</h2>
                 <button
                     onClick={() => handleProjectCreaetion()}
-                    className="mt-4 w-full bg-amber-500/80 hover:bg-amber-500 text-white py-2 px-3 rounded"
+                    className="mt-4 w-full bg-white/30 text-white py-2 px-3 rounded-2xl backdrop-blur-3xl"
                 >
                     + New Project
                 </button>
@@ -60,7 +60,7 @@ export default function Sidebar({projects, loading, error}: SidebarProps) {
                 </nav>
 
                 <div className='mt-auto p-4'>
-                    <button onClick={handleLogout} className="w-full bg-amber-600/80 hover:bg-amber-600 text-white py-2 px-3 rounded-3xl">
+                    <button onClick={handleLogout} className="w-full bg-red-600/35 hover:bg-red-600/50 bg-opacity-75 backdrop-blur-3xl  text-white py-2 px-3 rounded-3xl">
                         Sign out
                     </button>
                 </div>

@@ -77,7 +77,7 @@ body::after {
 
 /* Dark, nearly opaque glass for sidebars/drawers */
 .glass-heavy {
-  background-color: rgba(10, 12, 16, 0.8); /* adjust alpha for more/less transparency */
+  background-color: rgba(10, 12, 16, 0.6); /* adjust alpha for more/less transparency */
   backdrop-filter: blur(18px) saturate(150%);
   -webkit-backdrop-filter: blur(18px) saturate(150%);
   border: 1px solid rgba(255, 255, 255, 0.06);
