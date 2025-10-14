@@ -4,7 +4,7 @@ import { useProjects } from '../Hooks/useProjects'
 import Sidebar from '../components/Sidebar'
 import InputButton from '../components/InputButton'
 import ProjectSettingsModal from '../components/ProjectSettingsModal'
-import { Cog } from 'lucide-react';
+import { Cog, Copy } from 'lucide-react';
 
 type Message = {
     id: number;
@@ -50,7 +50,7 @@ export default function ChatPage(){
                         setError('Failed to fetch messages')
                         setLoading(false)
                     }
-                } catch (error) {
+                } catch {
                     setError('An error occurred while fetching messages')
                     setLoading(false)
                 }
@@ -204,6 +204,16 @@ export default function ChatPage(){
         }
     }
 
+    const handleManualCopy = async (text: string) => {
+        try {
+            await navigator.clipboard.writeText(text)
+            setShowCopiedToast(true)
+            setTimeout(() => setShowCopiedToast(false), 2000)
+        } catch (e) {
+            console.error('Failed to copy text:', e)
+        }
+    }
+
     const handleUpdateProjet = async (data: {name?:string, description?:string,techStack?:string}) => {
         console.log(`projectId: ${projectId}, name: ${data.name}, description: ${data.description}, techStack: ${data.techStack}`)
         const updatedDetails = await updateProjectDetails({projectId: projectIdNumber, ...data})
@@ -241,8 +251,17 @@ export default function ChatPage(){
                         {messages.map((msg) => (
                             <div key={msg.id} className="glass-subtle card-rounded p-4">
                                 <p className="text-sm mb-2"><span className="font-medium text-white/90">Original:</span> {msg.content}</p>
-                                <div className="text-sm whitespace-pre-wrap">
-                                    <span className="font-medium text-white/90">Enhanced:</span> {msg.enhancedPrompt}
+                                <div className="relative mt-2">
+                                    <div className="glass card-rounded p-3 font-mono text-[13px] leading-relaxed whitespace-pre-wrap">
+                                        {msg.enhancedPrompt}
+                                    </div>
+                                    <button
+                                        aria-label="Copy enhanced prompt"
+                                        className="absolute top-2 right-2 p-1.5 rounded bg-white/10 hover:bg-white/15"
+                                        onClick={() => handleManualCopy(msg.enhancedPrompt)}
+                                    >
+                                        <Copy className="h-4 w-4 text-white/80" />
+                                    </button>
                                 </div>
                             </div>
                         ))}

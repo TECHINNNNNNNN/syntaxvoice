@@ -51,7 +51,7 @@ export default function Sidebar({projects, loading, error}: SidebarProps) {
                 <ul>
                     {projects.map((project) => (
                         <Link to={`/project/${project.id}`}>
-                            <li key={project.id} className="p-2 rounded cursor-pointer glass-subtle hover:bg-white/5 mb-2 text-white/90">
+                            <li key={project.id} className="p-2 rounded cursor-pointer mb-2 text-white/90">
                                 {project.name}
                             </li>
                         </Link>
