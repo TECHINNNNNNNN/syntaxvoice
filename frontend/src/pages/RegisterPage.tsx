@@ -9,7 +9,7 @@ const BASE_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:1234'
 
 const registerSchema = z.object({
     email: z.string().email({ message: "Invalid email address" }),
-    username: z.string().min(3, { message: "Username must be at least 3 characters long" }),
+    name: z.string().min(3, { message: "Name must be at least 3 characters long" }),
     password: z.string().min(6, { message: "Password must be at least 6 characters long" }),
     confirmPassword: z.string().min(6, { message: "Confirm Password must be at least 6 characters long" }),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -32,14 +32,14 @@ export default function RegisterPage() {
         setIsSubmitting(true)
         setServerError(null)
         try {
-            const {email, password, username} = data
+            const {email, password, name} = data
             console.log("Form data submitted:", data)
             const response = await fetch(`${BASE_URL}/register`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json' 
                 },
-                body: JSON.stringify({email, password, username})
+                body: JSON.stringify({email, password, name})
             })
 
             const responseData = await response.json()
@@ -75,8 +75,8 @@ export default function RegisterPage() {
                     {errors.email && <p className='text-red-400'>{errors.email.message}</p>}
                 </div>
                 <div>
-                    <input type="text" placeholder='username' {...register('username')}/>
-                    {errors.username && <p className='text-red-400'>{errors.username.message}</p>}
+                    <input type="text" placeholder='name' {...register('name')}/>
+                    {errors.name && <p className='text-red-400'>{errors.name.message}</p>}
                 </div>
                 <div>
                     <input type="password" placeholder="password" {...register('password')} />
