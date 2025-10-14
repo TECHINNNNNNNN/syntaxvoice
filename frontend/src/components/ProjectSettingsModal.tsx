@@ -41,7 +41,7 @@ export default function ProjectSettingsModal({isOpen,onClose,onSubmit,project}: 
 
     return (
         <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
-            <div className='bg-gray p-6 rounded-lg w-full max-w-md'>
+            <div className='bg-gray-500 p-6 rounded-lg w-full max-w-md'>
                 <h2 className='text-2xl font-bold mb-4'>Project Settings</h2>
                 <form onSubmit={handleSubmit(onSubmit)}>
                     <div className='mb-4'>
