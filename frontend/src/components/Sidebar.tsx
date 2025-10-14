@@ -32,7 +32,7 @@ export default function Sidebar({projects, loading, error}: SidebarProps) {
 
             {/* Main Sidebar */}
             <aside
-                className={`max-w-sm w-72 h-screen max-h-screen sticky top-0 text-white flex flex-col rounded-r-lg glass`}
+                className={`max-w-sm w-72 h-screen max-h-screen sticky top-0 text-white flex flex-col rounded-r-lg glass-heavy`}
             >
                 <div className="p-4 glass-divider">
                 <h2 className="text-xl font-bold">Projects</h2>

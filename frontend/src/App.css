@@ -75,6 +75,15 @@ body::after {
   box-shadow: 0 16px 40px rgba(0,0,0,0.45);
 }
 
+/* Dark, nearly opaque glass for sidebars/drawers */
+.glass-heavy {
+  background-color: rgba(10, 12, 16, 0.8); /* adjust alpha for more/less transparency */
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+}
+
 /* Code block with glass accent and subtle grid */
 .code-glass {
   position: relative;
