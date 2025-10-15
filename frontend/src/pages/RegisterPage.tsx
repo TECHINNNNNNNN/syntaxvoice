@@ -2,7 +2,7 @@ import {useForm} from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {z} from 'zod';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 
 const BASE_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:1234'
@@ -67,30 +67,45 @@ export default function RegisterPage() {
 
 
     return (
-        <div>
-            <h1>Register Page</h1>
-            <form onSubmit={handleSubmit(onSubmit)}>
-                <div>
-                    <input type="text" placeholder="email" {...register('email')} />
-                    {errors.email && <p className='text-red-400'>{errors.email.message}</p>}
-                </div>
-                <div>
-                    <input type="text" placeholder='name' {...register('name')}/>
-                    {errors.name && <p className='text-red-400'>{errors.name.message}</p>}
-                </div>
-                <div>
-                    <input type="password" placeholder="password" {...register('password')} />
-                    {errors.password && <p className='text-red-400'>{errors.password.message}</p>}
-                </div>
-                <div>
-                    <input type="password" placeholder="confirm password" {...register('confirmPassword')} />
-                    {errors.confirmPassword && <p className='text-red-400'>{errors.confirmPassword.message}</p>}
-                </div>
-                <div>
-                    <button disabled={isSubmitting} type="submit">{isSubmitting ? 'Registering...': 'Register'}</button>
-                </div>
-            </form>
-            {serverError && <p className='text-red-400'>{serverError}</p>}
-        </div>
+        <main className="min-h-screen flex items-center justify-center p-6">
+            <div className="glass card-rounded w-full max-w-md p-6">
+                <header className="mb-5">
+                    <h1 className="text-2xl font-[var(--font-display)]">Create account</h1>
+                    <p className="text-white/70 text-sm mt-1">Join and start capturing voice to prompts</p>
+                </header>
+
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                    <div>
+                        <label htmlFor="email" className='block text-sm mb-1 text-white/80'>Email</label>
+                        <input id='email' type="email" placeholder="name@domain.com" className='w-full p-3 rounded bg-black/20 border border-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-amber-500/70' {...register('email')} />
+                        {errors.email && <p className='text-amber-300 text-sm mt-1'>{errors.email.message}</p>}
+                    </div>
+                    <div>
+                        <label htmlFor="name" className='block text-sm mb-1 text-white/80'>Name</label>
+                        <input id='name' type="text" placeholder='Your name' className='w-full p-3 rounded bg-black/20 border border-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-amber-500/70' {...register('name')}/>
+                        {errors.name && <p className='text-amber-300 text-sm mt-1'>{errors.name.message}</p>}
+                    </div>
+                    <div>
+                        <label htmlFor="password" className='block text-sm mb-1 text-white/80'>Password</label>
+                        <input id='password' type="password" placeholder="••••••••" className='w-full p-3 rounded bg-black/20 border border-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-amber-500/70' {...register('password')} />
+                        {errors.password && <p className='text-amber-300 text-sm mt-1'>{errors.password.message}</p>}
+                    </div>
+                    <div>
+                        <label htmlFor="confirmPassword" className='block text-sm mb-1 text-white/80'>Confirm password</label>
+                        <input id='confirmPassword' type="password" placeholder="••••••••" className='w-full p-3 rounded bg-black/20 border border-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-amber-500/70' {...register('confirmPassword')} />
+                        {errors.confirmPassword && <p className='text-amber-300 text-sm mt-1'>{errors.confirmPassword.message}</p>}
+                    </div>
+
+                    {serverError && <div className='text-amber-300 text-sm'>{serverError}</div>}
+
+                    <button disabled={isSubmitting} type="submit" className='w-full py-2.5 rounded bg-amber-600/80 hover:bg-amber-600 text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed'>{isSubmitting ? 'Registering…': 'Register'}</button>
+                </form>
+
+                <footer className='mt-5 text-sm text-white/70'>
+                    Already have an account?{' '}
+                    <Link to="/login" className='text-amber-300 hover:text-amber-200'>Sign in</Link>
+                </footer>
+            </div>
+        </main>
     );
 }
