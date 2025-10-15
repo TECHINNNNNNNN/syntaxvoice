@@ -25,6 +25,22 @@ const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:5173'
 const ALLOWED_ORIGINS = CORS_ORIGIN.split(',').map(o => o.trim()).filter(Boolean)
 const TRANSCRIPTION_MODEL = process.env.TRANSCRIPTION_MODEL || 'whisper-1'
 const CHAT_MODEL = process.env.CHAT_MODEL || 'gpt-4'
+const FREE_MONTHLY_TRANSCRIPTIONS = Number(process.env.FREE_MONTHLY_TRANSCRIPTIONS) || 20
+
+function isSubscriptionActive(status){
+    return status === 'active'
+}
+function addOneMonthSameDayUTC(from = new Date()) {
+    const y = from.getUTCFullYear()
+    const m = from.getUTCMonth()
+    const d = from.getUTCDate()
+    const nextY = m === 11 ? y + 1 : y
+    const nextM = (m + 1) % 12
+    const lastDayNextM = new Date(Date.UTC(nextY, nextM + 1, 0)).getUTCDate()
+    const day = Math.min(d, lastDayNextM)
+    return new Date(Date.UTC(nextY, nextM, day, from.getUTCHours(), from.getUTCMinutes(), from.getUTCSeconds(), 0))
+}
+
 
 const upload = multer({ storage: multer.memoryStorage() })
 
@@ -54,6 +70,43 @@ function authenticateToken(req, res, next) {
         return res.status(401).json({error: 'Invalid token'})
     }
 }
+
+app.get('/me', authenticateToken, async (req,res) => {
+    try {
+        const userId = req.user.userId
+        if (!userId) return res.status(400).json({error: "User ID not found"})
+        const user = await prisma.user.findUnique({
+            where: {id: Number(userId)},
+            select: {id: true, email: true, name: true, subscriptionStatus: true, currentPeriodEnd: true, monthlyTranscriptions: true, stripeCustomerId: true}
+         })
+
+        console.log(`userId: ${userId}`)
+        if (!user) return res.status(404).json({error: "User not found"})
+        
+        const freeLimit = Number.isFinite(FREE_MONTHLY_TRANSCRIPTIONS) ? FREE_MONTHLY_TRANSCRIPTIONS : 20
+        const used = user.monthlyTranscriptions || 0
+        const remaining = freeLimit - used
+
+        console.log(`freeLimit: ${freeLimit}, used: ${used}, remaining: ${remaining}`)
+
+        return res.status(200).json({
+            user: {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                subscriptionStatus: user.subscriptionStatus,
+                currentPeriodEnd: user.currentPeriodEnd,
+            },
+            usage: {
+                monthlyTranscriptions: used,
+                freeLimit: freeLimit,
+                remaining: remaining
+            }
+        })
+    } catch (error) {
+        res.status(500).json({error: "Failed to fetch profile"})
+    }
+})
 
 app.post('/register', async (req, res) => {
     try {
@@ -235,6 +288,41 @@ app.patch('/enhance-project-context', authenticateToken, async (req,res) => {
 
 app.post('/transcribe',authenticateToken, upload.single('audio'), async (req, res) => {
     const {projectId} = req.body
+    const userId = req.user?.userId
+    if (!userId){
+        return res.status(400).json({error: "User ID not found"})
+    }
+
+
+    const user = await prisma.user.findUnique({
+        where: {id: Number(userId)},
+        select: {subscriptionStatus: true, currentPeriodEnd: true, monthlyTranscriptions: true}
+    })
+
+    if (!user){
+        return res.status(404).json({error: "User not found, maybe you are not logged in"})
+    }
+    
+    const active = isSubscriptionActive(user.subscriptionStatus) ?? null
+
+    if (!active){
+        const now = new Date()
+        const periodEnd = user.currentPeriodEnd ?? addOneMonthSameDayUTC(now)
+        if (!periodEnd || now > periodEnd){
+            await prisma.user.update({
+                where: {id: Number(userId)},
+                data: {
+                    monthlyTranscriptions: 0,
+                    currentPeriodEnd: addOneMonthSameDayUTC(now)
+                }
+            })
+        }
+
+        if ((user.monthlyTranscriptions ?? 0) > FREE_MONTHLY_TRANSCRIPTIONS){
+            return res.status(403).json({error: "You have reached your free transcription limit. Please upgrade to a paid plan to continue transcribing."})
+        }
+    }
+
     try {
         if (!req.file){
             return res.status(400).json({error: "No file uploaded"})
@@ -330,6 +418,26 @@ app.post('/transcribe',authenticateToken, upload.single('audio'), async (req, re
                 type: 'audio',
             }
         })
+
+        if(!active){
+            if (user.monthlyTranscriptions == null){
+                await prisma.user.update({
+                    where: {id: Number(userId)},
+                    data: {
+                        monthlyTranscriptions: 0
+                    }
+                })
+                user.monthlyTranscriptions = 0
+            }
+            await prisma.user.update({
+                where: {id: Number(userId)},
+                data: {
+                    monthlyTranscriptions: {
+                        increment: 1
+                    }
+                }
+            })
+        }
 
     } catch (error) {
         console.error('Transcription error:', error)

@@ -21,6 +21,10 @@ model User {
   name         String?
   createdAt    DateTime  @default(now()) @map("created_at")
   projects     Project[]
+  stripeCustomerId String? @unique @map("stripe_customer_id")
+  subscriptionStatus String? @map("subscription_status")
+  currentPeriodEnd DateTime? @map("current_period_end")
+  monthlyTranscriptions Int @default(0) @map("monthly_transcriptions")
 
   @@map("users")
 }
