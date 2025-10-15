@@ -9,14 +9,19 @@ import multer from 'multer'
 import {PrismaClient} from './generated/prisma/index.js'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+import Stripe from 'stripe'
+import e from 'express'
 
 const prisma = new PrismaClient()
-
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 dotenv.config({ path: path.join(__dirname, '..', '.env') })
+
+// Initialize Stripe AFTER envs are loaded; pin API version to match Stripe CLI
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2025-07-30.basil' })
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173'
 
 const app = express()
 
@@ -49,6 +54,85 @@ const corsOption = {
     optionsSuccessStatus: 200
 }
 
+// Stripe webhook must receive the RAW body. Register this route BEFORE express.json().
+app.post('/webhooks/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
+    const sig = req.headers['stripe-signature']
+    let event
+    try {
+        event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET)
+    } catch (error) {
+        console.error('Webhook signature verification failed')
+        return res.status(400).json({ error: 'Invalid signature' })
+    }
+
+    try {
+        switch (event.type) {
+            case 'checkout.session.completed': {
+                const session = event.data.object
+                const customerId = session.customer
+                if (typeof customerId === 'string') {
+                    // Prefer mapping via customer metadata we set during checkout
+                    const customer = await stripe.customers.retrieve(customerId)
+                    const appUserIdMeta = typeof customer !== 'string' ? customer.metadata?.appUserId : undefined
+                    const user = appUserIdMeta
+                        ? await prisma.user.findUnique({ where: { id: Number(appUserIdMeta) } })
+                        : await prisma.user.findUnique({ where: { email: session.customer_details?.email || '' } })
+                    if (user && !user.stripeCustomerId) {
+                        await prisma.user.update({ where: { id: user.id }, data: { stripeCustomerId: customerId } })
+                    }
+                }
+                break
+            }
+            case 'customer.subscription.created':
+            case 'customer.subscription.updated': {
+                const sub = event.data.object
+                const customerId = sub.customer
+                if (typeof customerId === 'string') {
+                    const stripeStatus = sub.status
+                    const isActive = (stripeStatus === 'active' || stripeStatus === 'trialing')
+                    const periodEnd = sub.current_period_end ? new Date(sub.current_period_end * 1000) : null
+
+                    const user = await prisma.user.findFirst({ where: { stripeCustomerId: customerId } })
+                    if (user) {
+                        await prisma.user.update({
+                            where: { id: user.id },
+                            data: {
+                                subscriptionStatus: isActive ? 'active' : null,
+                                currentPeriodEnd: periodEnd
+                            }
+                        })
+                    }
+                }
+                break
+            }
+            case 'customer.subscription.deleted': {
+                const sub = event.data.object
+                const customerId = sub.customer
+                if (typeof customerId === 'string') {
+                    const user = await prisma.user.findFirst({ where: { stripeCustomerId: customerId } })
+                    if (user) {
+                        await prisma.user.update({
+                            where: { id: user.id },
+                            data: { subscriptionStatus: null }
+                        })
+                    }
+                }
+                break
+            }
+            default: {
+                console.log(`Unhandled event type ${event.type}`)
+                break
+            }
+        }
+
+        res.json({ received: true })
+    } catch (error) {
+        console.error('Webhook processing error:', error)
+        res.status(500).json({ error: 'Failed to process webhook' })
+    }
+})
+
+// Now it is safe to use JSON parsing for all other routes
 app.use(express.json())
 app.use(cors(corsOption))
 
@@ -307,8 +391,8 @@ app.post('/transcribe',authenticateToken, upload.single('audio'), async (req, re
 
     if (!active){
         const now = new Date()
-        const periodEnd = user.currentPeriodEnd ?? addOneMonthSameDayUTC(now)
-        if (!periodEnd || now > periodEnd){
+        const periodEnd = user.currentPeriodEnd ? new Date(user.currentPeriodEnd) : null
+        if (!periodEnd || now >= periodEnd){
             await prisma.user.update({
                 where: {id: Number(userId)},
                 data: {
@@ -316,10 +400,15 @@ app.post('/transcribe',authenticateToken, upload.single('audio'), async (req, re
                     currentPeriodEnd: addOneMonthSameDayUTC(now)
                 }
             })
+            user.monthlyTranscriptions = 0
         }
 
-        if ((user.monthlyTranscriptions ?? 0) > FREE_MONTHLY_TRANSCRIPTIONS){
-            return res.status(403).json({error: "You have reached your free transcription limit. Please upgrade to a paid plan to continue transcribing."})
+        if ((user.monthlyTranscriptions ?? 0) >= FREE_MONTHLY_TRANSCRIPTIONS){
+            return res.status(402).json({
+                code: 'quota_exceeded',
+                message: 'Free monthly limit reached',
+                freeLimit: FREE_MONTHLY_TRANSCRIPTIONS
+            })
         }
     }
 
@@ -452,6 +541,89 @@ app.post('/process', (req, res) => {
     console.log(text)
     res.status(200).json({message: 'Text received', text})
 })
+
+
+// ------------------------------------------------------------------------------------------------
+
+
+app.post('/billing/checkout', authenticateToken, async (req,res) => {
+    try {
+        const userId = req.user?.userId
+        if (!userId){
+            return res.status(400).json({error: "User ID not found in billing checkout request"})
+        }
+
+        const user = await prisma.user.findUnique({
+            where: {id: Number(userId)},
+            select: {id: true,email: true,name: true,stripeCustomerId: true}
+        })
+
+        if (!user){
+            return res.status(404).json({error: "User not found in billing checkout request"})
+        }
+
+        let customerId = user.stripeCustomerId
+        if (!customerId){
+            const customer = await stripe.customers.create({
+                email: user.email || undefined,
+                name: user.name || undefined,
+                metadata: {appUserId: String(user.id)}
+            })
+            customerId = customer.id
+            await prisma.user.update({
+                where: {id: Number(userId)},
+                data: {stripeCustomerId: customerId}
+            })
+        }
+
+        const price = req.body?.priceId || process.env.STRIPE_PRICE_ID
+        if (!price) {
+            return res.status(400).json({error: "Price ID not provided in billing checkout request"})
+        }
+
+        const session = await stripe.checkout.sessions.create({
+            mode: 'subscription',
+            customer: customerId,
+            line_items: [{price: price, quantity: 1}],
+            allow_promotion_codes: true,
+            success_url: `${FRONTEND_URL}/project/new?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${FRONTEND_URL}/project/new?checkout=cancelled`,
+        })
+
+        return res.status(200).json({url: session.url})
+            
+    } catch (error) {
+        console.error('Billing checkout error:', error)
+        return res.status(500).json({error: "Failed to create billing checkout session"})
+    }
+})
+
+app.post('/billing/portal', authenticateToken, async (req,res) => {
+    try {
+        const userId = req.user?.userId
+        if (!userId){
+            return res.status(400).json({error: "User ID not found in billing portal request"})
+        }
+        const user = await prisma.user.findUnique({
+            where: {id: Number(userId)},
+            select: {id: true,stripeCustomerId: true}
+        })
+
+        if (!user) return res.status(404).json({error: "User not found in billing portal request"})
+        if (!user.stripeCustomerId) return res.status(400).json({error: "User does not have a stripe customer id"})
+
+        const portal = await stripe.billingPortal.sessions.create({
+            customer: user.stripeCustomerId,
+            return_url: `${FRONTEND_URL}/project/new`,
+        })
+
+        return res.status(200).json({url: portal.url})
+    } catch (error) {
+        console.error('Billing portal error:', error)
+        return res.status(500).json({error: "Failed to create billing portal session"})
+    }
+})
+
 
 
 

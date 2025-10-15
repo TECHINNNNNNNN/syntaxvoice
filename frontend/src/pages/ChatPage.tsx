@@ -223,6 +223,10 @@ export default function ChatPage(){
                 console.log("🫡 Your enhanced Prompt is copied to clipboard")
 
             }else {
+                if (response.status === 402) {
+                    navigate('/billing/subscribe')
+                    return
+                }
                 console.error('Failed to transcribe audio')
                 setError('Failed to transcribe audio')
             }
