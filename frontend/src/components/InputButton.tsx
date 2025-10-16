@@ -16,6 +16,12 @@ const InputButton = ({onAudioCapture} : InputButtonProps) => {
     const rafRef = useRef<number | null>(null)
     const [levels, setLevels] = useState<number[]>([2,4,8,4,2])
     const rippleRef = useRef<HTMLSpanElement | null>(null)
+    const startTimeRef = useRef<number | null>(null)
+    const countdownRef = useRef<number | null>(null)
+    const autoStopTimeoutRef = useRef<number | null>(null)
+    const [remainingMs, setRemainingMs] = useState<number>(2 * 60 * 1000)
+
+    const MAX_DURATION_MS = Number(import.meta.env.VITE_MAX_UPLOAD_DURATION_MS || 2 * 60 * 1000)
 
     // cleanup on unmount
     useEffect(() => {
@@ -48,12 +54,32 @@ const InputButton = ({onAudioCapture} : InputButtonProps) => {
         }
     }
 
+    const getAudioOptions = (): MediaRecorderOptions => {
+        if (typeof window !== 'undefined' && 'MediaRecorder' in window) {
+            // Prefer Opus @ ~64kbps for tiny files
+            if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+                return { mimeType: 'audio/webm;codecs=opus', audioBitsPerSecond: 64000 }
+            }
+            if (MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')) {
+                return { mimeType: 'audio/ogg;codecs=opus', audioBitsPerSecond: 64000 }
+            }
+            if (MediaRecorder.isTypeSupported('audio/mp4')) {
+                return { mimeType: 'audio/mp4', audioBitsPerSecond: 96000 }
+            }
+        }
+        return {}
+    }
 
-
-
+    const formatMMSS = (ms: number) => {
+        const clamped = Math.max(0, Math.floor(ms / 1000))
+        const mm = String(Math.floor(clamped / 60)).padStart(2, '0')
+        const ss = String(clamped % 60).padStart(2, '0')
+        return `${mm}:${ss}`
+    }
     const handleStart = async () => {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const mediaRecorder = new MediaRecorder(stream)
+        const options = getAudioOptions()
+        const mediaRecorder = new MediaRecorder(stream, options)
         mediaRecorderRef.current = mediaRecorder
         audioChunksRef.current = []
 
@@ -71,7 +97,16 @@ const InputButton = ({onAudioCapture} : InputButtonProps) => {
         }
 
         mediaRecorder.onstop = async () => {
-            const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' })
+            // compute duration
+            const end = Date.now()
+            const durationSec = startTimeRef.current ? (end - startTimeRef.current) / 1000 : undefined
+            const mime = mediaRecorderRef.current?.mimeType || 'audio/webm'
+            const audioBlob = new Blob(audioChunksRef.current, { type: mime })
+            // attach a non-standard hint so the caller can send it to backend
+            if (typeof durationSec === 'number' && Number.isFinite(durationSec)) {
+                try { (audioBlob as unknown as { duration?: number }).duration = durationSec }
+                catch { /* intentionally ignore: attaching non-standard hint can fail in some runtimes */ }
+            }
             onAudioCapture(audioBlob)
             // stop analyser
             if (rafRef.current) cancelAnimationFrame(rafRef.current)
@@ -80,12 +115,40 @@ const InputButton = ({onAudioCapture} : InputButtonProps) => {
             audioContextRef.current = null
             analyserRef.current = null
             dataArrayRef.current = null
+            // clear countdown
+            if (countdownRef.current) {
+                window.clearInterval(countdownRef.current)
+                countdownRef.current = null
+            }
+            if (autoStopTimeoutRef.current) {
+                window.clearTimeout(autoStopTimeoutRef.current)
+                autoStopTimeoutRef.current = null
+            }
+            startTimeRef.current = null
+            setRemainingMs(MAX_DURATION_MS)
         }
 
         mediaRecorder.start()
         setRecording(true)
         // start cue
         playTone(660, 140, 0.08)
+
+        // Countdown updates
+        startTimeRef.current = Date.now()
+        setRemainingMs(MAX_DURATION_MS)
+        if (countdownRef.current) window.clearInterval(countdownRef.current)
+        countdownRef.current = window.setInterval(() => {
+            if (!startTimeRef.current) return
+            const elapsed = Date.now() - startTimeRef.current
+            const remaining = Math.max(0, MAX_DURATION_MS - elapsed)
+            setRemainingMs(remaining)
+            if (remaining <= 0) {
+                handleStop()
+            }
+        }, 250)
+        // hard auto-stop just in case
+        if (autoStopTimeoutRef.current) window.clearTimeout(autoStopTimeoutRef.current)
+        autoStopTimeoutRef.current = window.setTimeout(() => handleStop(), MAX_DURATION_MS + 100)
 
         // Setup Web Audio for live levels
         type WindowWithWebAudio = Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext }
@@ -158,7 +221,7 @@ const InputButton = ({onAudioCapture} : InputButtonProps) => {
                                     <span key={i} className="eq-bar-live" style={{ height: h }} />
                                 ))}
                             </div>
-                            <span className="text-white/90 text-sm">Listening…</span>
+                            <span className="text-white/90 text-sm tabular-nums">{formatMMSS(remainingMs)}</span>
                         </div>
                     ) : (
                         <svg className="mic-icon" width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
