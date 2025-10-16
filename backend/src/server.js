@@ -31,6 +31,11 @@ const ALLOWED_ORIGINS = CORS_ORIGIN.split(',').map(o => o.trim()).filter(Boolean
 const TRANSCRIPTION_MODEL = process.env.TRANSCRIPTION_MODEL || 'whisper-1'
 const CHAT_MODEL = process.env.CHAT_MODEL || 'gpt-4'
 const FREE_MONTHLY_TRANSCRIPTIONS = Number(process.env.FREE_MONTHLY_TRANSCRIPTIONS) || 20
+// Audio upload constraints (duration + size + mime)
+const MAX_AUDIO_DURATION_MS = Number(process.env.MAX_AUDIO_DURATION_MS || 2 * 60 * 1000) // default 2 minutes
+const MAX_UPLOAD_BYTES = Number(process.env.MAX_UPLOAD_BYTES || 10 * 1024 * 1024) // default 10 MiB
+const ALLOWED_AUDIO_MIME = (process.env.ALLOWED_AUDIO_MIME || 'audio/webm,audio/wav,audio/ogg,audio/mpeg,audio/mp4')
+    .split(',').map(s => s.trim()).filter(Boolean)
 
 function isSubscriptionActive(status){
     return status === 'active'
@@ -47,7 +52,17 @@ function addOneMonthSameDayUTC(from = new Date()) {
 }
 
 
-const upload = multer({ storage: multer.memoryStorage() })
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: MAX_UPLOAD_BYTES },
+    fileFilter: (_req, file, cb) => {
+        if (ALLOWED_AUDIO_MIME.includes(file.mimetype) || file.mimetype.startsWith('audio/')) {
+            cb(null, true)
+        } else {
+            cb(new multer.MulterError('LIMIT_UNEXPECTED_FILE', 'audio'))
+        }
+    }
+})
 
 const corsOption = {
     origin: ALLOWED_ORIGINS.length <= 1 ? ALLOWED_ORIGINS[0] : ALLOWED_ORIGINS,
@@ -372,6 +387,7 @@ app.patch('/enhance-project-context', authenticateToken, async (req,res) => {
 
 app.post('/transcribe',authenticateToken, upload.single('audio'), async (req, res) => {
     const {projectId} = req.body
+    const durationMs = Number(req.body?.durationMs)
     const userId = req.user?.userId
     if (!userId){
         return res.status(400).json({error: "User ID not found"})
@@ -415,6 +431,9 @@ app.post('/transcribe',authenticateToken, upload.single('audio'), async (req, re
     try {
         if (!req.file){
             return res.status(400).json({error: "No file uploaded"})
+        }
+        if (Number.isFinite(durationMs) && durationMs > MAX_AUDIO_DURATION_MS){
+            return res.status(413).json({ error: 'Audio duration exceeds limit', maxDurationMs: MAX_AUDIO_DURATION_MS })
         }
         const audioBuffer = new Uint8Array(req.file.buffer)
 

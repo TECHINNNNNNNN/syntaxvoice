@@ -186,7 +186,14 @@ export default function ChatPage(){
         }
 
         const formData = new FormData()
-        formData.append('audio', audioBlob, 'audio.wav')
+        formData.append('audio', audioBlob, 'audio.webm')
+        // Attach client-measured duration if available via Web Audio metadata on the Blob
+        // Some browsers set blob duration in seconds on a custom property when created via MediaRecorder
+        // We defensively probe it, else let the server enforce size-only.
+        const maybeDuration = (audioBlob as unknown as { duration?: number }).duration
+        if (typeof maybeDuration === 'number' && Number.isFinite(maybeDuration)) {
+            formData.append('durationMs', String(Math.round(maybeDuration * 1000)))
+        }
         if (currentProjectId){
             formData.append('projectId', currentProjectId)
         }
