@@ -12,6 +12,11 @@ type Message = {
     enhancedPrompt: string;
 }
 
+type Me = {
+    user: {subscriptionStatus: string | null}
+    usage: {remaining: number, freeLimit: number}
+}
+
 const BASE_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:1234'
 
 function escapeHtml(input: string): string {
@@ -45,7 +50,28 @@ export default function ChatPage(){
     const [showCopiedToast, setShowCopiedToast] = useState<boolean>(false)
     const bottomRef = useRef<HTMLDivElement | null>(null)
     const projectIdNumber = Number(projectId)
+    const [me, setMe] = useState<Me | null>(null)
     let projectNameFromAudio: string  =  ''
+
+    useEffect(() => {
+        const load = async () => {
+            try {
+                const token = localStorage.getItem('token')
+                if (!token) return
+                const res = await fetch(`${BASE_URL}/me`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+                if (!res.ok) return
+                const data = await res.json().catch(() => ({}))
+                setMe(data)
+            } catch (error) {
+                console.error('Error fetching profile:', error)
+            }
+        }
+        load()
+    },[messages.length])
 
     useEffect(() => {
         const isNew = projectId === 'new'
@@ -294,6 +320,13 @@ export default function ChatPage(){
                         </div>
                         {project && (
                             <div className='flex items-center gap-4'>
+                                {me && (
+                                    <span className="px-2 py-1 rounded-3xl p-2 bg-white/10 text-xs text-white/80">
+                                        {me.user.subscriptionStatus === 'active'
+                                        ? 'Pro'
+                                        : `Free ${me.usage.remaining}/${me.usage.freeLimit}`}
+                                    </span>
+                                )}
                                 <button
                                     onClick={() => setIsSettingModalOpen(true)}
                                     disabled={!project}
