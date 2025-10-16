@@ -4,7 +4,7 @@ import { useProjects } from '../Hooks/useProjects'
 import Sidebar from '../components/Sidebar'
 import InputButton from '../components/InputButton'
 import ProjectSettingsModal from '../components/ProjectSettingsModal'
-import { Cog, Copy } from 'lucide-react';
+import { Cog, Copy, CreditCard } from 'lucide-react';
 
 type Message = {
     id: number;
@@ -86,6 +86,31 @@ export default function ChatPage(){
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
     }, [messages.length])
+
+    const handleManageBilling = async () => {
+        try {
+            const token = localStorage.getItem('token')
+            if (!token) {
+                navigate('/login')
+                return
+            }
+            const res = await fetch(`${BASE_URL}/billing/portal`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+
+            const data = await res.json().catch(() => ({}))
+            if (!res.ok || !data.url) {
+                throw new Error(data.error || 'Failed to create billing portal session')
+            }
+            window.location.href = data.url
+        } catch {
+            setError('Failed to manage billing')
+        }
+    }
 
     // Inline feedback for loading and errors to keep UI responsive
     if (loading) {
@@ -268,14 +293,24 @@ export default function ChatPage(){
                             )}
                         </div>
                         {project && (
-                            <button
-                                onClick={() => setIsSettingModalOpen(true)}
-                                disabled={!project}
-                                aria-disabled={!project}
-                                className={!project ? 'opacity-50 cursor-not-allowed' : ''}
-                            >
-                                <Cog className="h-6 w-6 text-gray-300 hover:text-white" />
-                            </button>
+                            <div className='flex items-center gap-4'>
+                                <button
+                                    onClick={() => setIsSettingModalOpen(true)}
+                                    disabled={!project}
+                                    aria-disabled={!project}
+                                    className={!project ? 'opacity-50 cursor-not-allowed' : ''}
+                                >
+                                    <Cog className="h-6 w-6 text-gray-300 hover:text-white" />
+                                </button>
+                                <button
+                                    onClick={handleManageBilling}
+                                    className={!project ? 'opacity-50 cursor-not-allowed' : ''}
+                                    aria-label="Manage Billing"
+                                    disabled={!project}
+                                >
+                                    <CreditCard className="h-6 w-6 text-gray-300 hover:text-white" />
+                                </button>
+                            </div>
                         )}
                     </div>
 
