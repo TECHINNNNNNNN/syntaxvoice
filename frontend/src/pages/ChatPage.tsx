@@ -14,7 +14,7 @@ type Message = {
 }
 
 type Me = {
-    user: {subscriptionStatus: string | null}
+    user: {subscriptionStatus: string | null, hasStripeCustomer: boolean}
     usage: {remaining: number, freeLimit: number}
 }
 
@@ -346,14 +346,25 @@ export default function ChatPage(){
                                 >
                                     <Cog className="h-6 w-6 text-gray-300 hover:text-white" />
                                 </button>
-                                <button
-                                    onClick={handleManageBilling}
-                                    className={!project ? 'opacity-50 cursor-not-allowed' : ''}
-                                    aria-label="Manage Billing"
-                                    disabled={!project}
-                                >
-                                    <CreditCard className="h-6 w-6 text-gray-300 hover:text-white" />
-                                </button>
+                                {me && me.user.hasStripeCustomer ? (
+                                     <button
+                                     onClick={handleManageBilling}
+                                     className={!project ? 'opacity-50 cursor-not-allowed' : ''}
+                                     aria-label="Manage Billing"
+                                     disabled={!project}
+                                 >
+                                     <CreditCard className="h-6 w-6 text-gray-300 hover:text-white" />
+                                 </button>
+                                ): (
+                                    <button
+                                        disabled
+                                        title="Subscribe first"
+                                        aria-label="Manage billing (Subscribe first)"
+                                        className="p-1.5 rounded bg-white/5 opacity-50 cursor-not-allowed"
+                                    >
+                                        <CreditCard className="h-6 w-6 text-gray-400" />
+                                    </button>
+                                )}
                             </div>
                         )}
                     </div>

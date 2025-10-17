@@ -209,6 +209,7 @@ app.get('/me', authenticateToken, async (req,res) => {
                 name: user.name,
                 subscriptionStatus: user.subscriptionStatus,
                 currentPeriodEnd: user.currentPeriodEnd,
+                hasStripeCustomer: Boolean(user.stripeCustomerId),
             },
             usage: {
                 monthlyTranscriptions: used,
@@ -588,7 +589,7 @@ app.post('/billing/checkout', authenticateToken, async (req,res) => {
 
         const user = await prisma.user.findUnique({
             where: {id: Number(userId)},
-            select: {id: true,email: true,name: true,stripeCustomerId: true}
+            select: {id: true,email: true,name: true,stripeCustomerId: true, subscriptionStatus: true}
         })
 
         if (!user){
