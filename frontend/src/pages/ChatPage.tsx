@@ -5,6 +5,7 @@ import Sidebar from '../components/Sidebar'
 import InputButton from '../components/InputButton'
 import ProjectSettingsModal from '../components/ProjectSettingsModal'
 import { Cog, Copy, CreditCard } from 'lucide-react';
+import toast from 'react-hot-toast'
 
 type Message = {
     id: number;
@@ -151,16 +152,9 @@ export default function ChatPage(){
     }
 
     if (error) {
-        return (
-            <div className="flex">
-                <Sidebar projects={projects} loading={projectsLoading} error={errorProjectsLoading} createProject={createProject} /> 
-                <main className="flex-1 p-6 md:p-10">
-                    <div className='glass card-rounded px-4 py-3 text-red-300'>
-                        {error}
-                    </div>
-                </main>
-            </div>
-        )
+        // Show as toast and clear local error to avoid interrupting layout
+        toast.error(error)
+        setError(null)
     }
 
     const generateTitleFromText = (text:string) => {
@@ -276,21 +270,21 @@ export default function ChatPage(){
                 }
 
                 await navigator.clipboard.writeText(buffer)
-                setShowCopiedToast(true)
-                setTimeout(() => setShowCopiedToast(false), 2000)
+                toast.success('Enhanced prompt copied to clipboard')
                 console.log("🫡 Your enhanced Prompt is copied to clipboard")
 
             }else {
                 if (response.status === 402) {
+                    toast('Free limit reached — upgrading…', { icon: '⚠️' })
                     navigate('/billing/subscribe')
                     return
                 }
                 console.error('Failed to transcribe audio')
-                setError('Failed to transcribe audio')
+                toast.error('Failed to transcribe audio')
             }
         } catch (error) {
             console.error('Error:', error)
-            setError('An error occurred during audio transcription')
+            toast.error('An error occurred during audio transcription')
         }
     }
 
