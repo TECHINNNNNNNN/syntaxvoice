@@ -27,6 +27,11 @@ export function useProjects() {
                     }
                 })
 
+                if (response.status === 401) {
+                    localStorage.removeItem('token')
+                    window.location.href = '/login'
+                    return
+                }
                 if (response.ok) {
                     const data = await response.json()
                     setProjects(data.projects)
@@ -34,7 +39,7 @@ export function useProjects() {
                     setError('Failed to fetch projects')
                 }
                 setLoading(false)
-            } catch (error) {
+            } catch {
                 setError('An error occurred while fetching projects')
                 setLoading(false)
             } finally {
@@ -55,6 +60,11 @@ export function useProjects() {
                 body: JSON.stringify(newProjectData)
             })
 
+            if (response.status === 401) {
+                localStorage.removeItem('token')
+                window.location.href = '/login'
+                return
+            }
             const responseData = await response.json()
 
             if (!response.ok) {
@@ -85,6 +95,11 @@ export function useProjects() {
                     techStack: updatedProject.techStack
                 })
             })
+            if (response.status === 401) {
+                localStorage.removeItem('token')
+                window.location.href = '/login'
+                return
+            }
             if (!response.ok) {
                 throw new Error('Failed to update project')
             }
@@ -135,6 +150,11 @@ export function useProjects() {
 
             })
 
+            if (response.status === 401) {
+                localStorage.removeItem('token')
+                window.location.href = '/login'
+                return
+            }
             if (!response.ok) {
                 setError('Failed to update project details')
             }

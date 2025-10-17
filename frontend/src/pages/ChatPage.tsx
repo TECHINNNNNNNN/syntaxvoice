@@ -87,6 +87,11 @@ export default function ChatPage(){
                         }
                     })
 
+                    if (response.status === 401) {
+                        localStorage.removeItem('token')
+                        navigate('/login')
+                        return
+                    }
                     if (response.ok) {
                         const responseData = await response.json()
                         setMessages(responseData.project.messages || [])
@@ -277,6 +282,11 @@ export default function ChatPage(){
                 if (response.status === 402) {
                     toast('Free limit reached — upgrading…', { icon: '⚠️' })
                     navigate('/billing/subscribe')
+                    return
+                }
+                if (response.status === 401) {
+                    localStorage.removeItem('token')
+                    navigate('/login')
                     return
                 }
                 console.error('Failed to transcribe audio')

@@ -151,6 +151,20 @@ app.post('/webhooks/stripe', express.raw({ type: 'application/json' }), async (r
 app.use(express.json())
 app.use(cors(corsOption))
 
+// Lightweight request logger for observability (method, path, status, duration, userId if present)
+app.use((req, res, next) => {
+    const startTimeMs = Date.now()
+    res.on('finish', () => {
+        const durationMs = Date.now() - startTimeMs
+        const method = req.method
+        const pathOnly = req.originalUrl?.split('?')[0] || req.url
+        const status = res.statusCode
+        const userId = (req.user && req.user.userId) ? req.user.userId : '-'
+        console.log(`[${new Date().toISOString()}] ${method} ${pathOnly} ${status} ${durationMs}ms user=${userId}`)
+    })
+    next()
+})
+
 app.get('/', (req, res) => {
     res.send('Hello World!')
 })
