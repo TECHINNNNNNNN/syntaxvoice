@@ -667,11 +667,23 @@ app.post('/billing/portal', authenticateToken, async (req,res) => {
         }
         const user = await prisma.user.findUnique({
             where: {id: Number(userId)},
-            select: {id: true,stripeCustomerId: true}
+            select: {id: true, stripeCustomerId: true, subscriptionStatus: true}
         })
 
-        if (!user) return res.status(404).json({error: "User not found in billing portal request"})
-        if (!user.stripeCustomerId) return res.status(400).json({error: "User does not have a stripe customer id"})
+        if (!user) return res.status(404).json({error: "User not found"})
+
+        const isActive = user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trialing'
+        if (!isActive) return res.status(400).json({ error: 'No active subscription' })
+
+        if (!user.stripeCustomerId) return res.status(400).json({ error: 'Subscribe first' })
+
+        // Ensure the saved customer exists in current Stripe mode (LIVE/TEST)
+        try {
+            await stripe.customers.retrieve(user.stripeCustomerId)
+        } catch {
+            await prisma.user.update({ where: { id: user.id }, data: { stripeCustomerId: null } })
+            return res.status(400).json({ error: 'Customer missing; start checkout to create one' })
+        }
 
         const portal = await stripe.billingPortal.sessions.create({
             customer: user.stripeCustomerId,
