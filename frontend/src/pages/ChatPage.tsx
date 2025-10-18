@@ -338,9 +338,9 @@ export default function ChatPage(){
                             <div className='flex items-center gap-4'>
                                 {me && (
                                     <span className="px-2 py-1 rounded-3xl p-2 bg-white/10 text-xs text-white/80">
-                                        {me.user.subscriptionStatus === 'active'
-                                        ? 'Pro'
-                                        : `Free ${me.usage.remaining}/${me.usage.freeLimit}`}
+                                        {(me.user.subscriptionStatus === 'active' || me.user.subscriptionStatus === 'trialing')
+                                            ? 'Pro'
+                                            : `Free ${me.usage.remaining}/${me.usage.freeLimit}`}
                                     </span>
                                 )}
                                 <button
@@ -351,7 +351,7 @@ export default function ChatPage(){
                                 >
                                     <Cog className="h-6 w-6 text-gray-300 hover:text-white" />
                                 </button>
-                                {me && me.user.hasStripeCustomer ? (
+                                {me && (me.user.subscriptionStatus === 'active' || me.user.subscriptionStatus === 'trialing') ? (
                                      <button
                                      onClick={handleManageBilling}
                                      className={!project ? 'opacity-50 cursor-not-allowed' : ''}
@@ -362,12 +362,11 @@ export default function ChatPage(){
                                  </button>
                                 ): (
                                     <button
-                                        disabled
-                                        title="Subscribe first"
-                                        aria-label="Manage billing (Subscribe first)"
-                                        className="p-1.5 rounded bg-white/5 opacity-50 cursor-not-allowed"
+                                        onClick={() => navigate('/billing/subscribe')}
+                                        aria-label="Upgrade plan"
+                                        className="px-3 py-1.5 rounded bg-amber-600/80 hover:bg-amber-600 text-white text-xs"
                                     >
-                                        <CreditCard className="h-6 w-6 text-gray-400" />
+                                        Upgrade
                                     </button>
                                 )}
                             </div>
