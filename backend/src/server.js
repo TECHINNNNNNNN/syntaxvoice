@@ -507,6 +507,9 @@ Output contract:
 - Root element <task>.
 - Children (in order): <context>, <action>, <requirements>, <output_format>.
 - Each child \u2264 3 sentences. Use concise, imperative sentences. Avoid filler.
+- Voice (inside XML): neutral, third-person; NEVER use "you" or "your".
+- <context> describes the user's situation/goal only; no directives.
+- <action> uses concise, subjectless imperatives (e.g., "Add rate limiting…").
 - If you must include angle brackets or code, wrap that part in <![CDATA[ ... ]]>
 - Do not include markdown, headings, or commentary outside <task>…</task>.
 
@@ -517,8 +520,8 @@ Example:
 User: "Add rate limiting to login to stop brute force."
 Assistant:
 <task>
-  <context>Login endpoint allows unlimited attempts; risk of brute-force attacks.</context>
-  <action>Introduce a 15-minute window limiter on /login using express-rate-limit.</action>
+  <context>The user experiences unlimited login attempts, creating a risk of brute‑force attacks.</context>
+  <action>Introduce a 15‑minute window limiter on /login using express‑rate‑limit.</action>
   <requirements><![CDATA[
   - Limit: 10 attempts/15 min/IP
   - Standard headers enabled; 429 on limit
