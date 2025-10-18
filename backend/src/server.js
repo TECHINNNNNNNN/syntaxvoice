@@ -624,6 +624,16 @@ app.post('/billing/checkout', authenticateToken, async (req,res) => {
         }
 
         let customerId = user.stripeCustomerId
+        // Auto-heal stale TEST customers when running with LIVE keys (or vice versa)
+        if (customerId) {
+            try {
+                await stripe.customers.retrieve(customerId)
+            } catch {
+                // Not found in this Stripe mode → clear and recreate below
+                await prisma.user.update({ where: { id: Number(userId) }, data: { stripeCustomerId: null } })
+                customerId = null
+            }
+        }
         if (!customerId){
             const customer = await stripe.customers.create({
                 email: user.email || undefined,
