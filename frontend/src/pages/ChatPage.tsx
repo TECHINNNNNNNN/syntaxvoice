@@ -48,7 +48,6 @@ export default function ChatPage(){
     const [error, setError] = useState<string | null>(null)
     const [project, setProject] = useState<{name: string, description?: string} | null>(null)
     const [isSettingModalOpen, setIsSettingModalOpen] = useState<boolean>(false)
-    const [showCopiedToast, setShowCopiedToast] = useState<boolean>(false)
     const bottomRef = useRef<HTMLDivElement | null>(null)
     const projectIdNumber = Number(projectId)
     const [me, setMe] = useState<Me | null>(null)
@@ -307,10 +306,10 @@ export default function ChatPage(){
     const handleManualCopy = async (text: string) => {
         try {
             await navigator.clipboard.writeText(text)
-            setShowCopiedToast(true)
-            setTimeout(() => setShowCopiedToast(false), 2000)
+            toast.success('Enhanced prompt copied to clipboard')
         } catch (e) {
             console.error('Failed to copy text:', e)
+            toast.error('Failed to copy enhanced prompt')
         }
     }
 
@@ -424,12 +423,6 @@ export default function ChatPage(){
                         <InputButton onAudioCapture={handleAudioCapture} />
                     </div>
 
-                    {/* Copy toast */}
-                    {showCopiedToast && (
-                        <div className='fixed bottom-24 left-1/2 -translate-x-1/2 glass card-rounded px-4 py-2 text-sm'>
-                            Enhanced prompt copied to clipboard
-                        </div>
-                    )}
                 </main>
             </div>
             <ProjectSettingsModal
