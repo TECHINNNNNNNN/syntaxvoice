@@ -11,6 +11,7 @@ import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import Stripe from 'stripe'
 import e from 'express'
+import rateLimit from 'express-rate-limit'
 
 const prisma = new PrismaClient()
 
@@ -25,6 +26,8 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173'
 
 const app = express()
 
+app.set('trust proxy', 1)
+
 const PORT = process.env.PORT || 1234
 const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:5173'
 const ALLOWED_ORIGINS = CORS_ORIGIN.split(',').map(o => o.trim()).filter(Boolean)
@@ -36,6 +39,18 @@ const MAX_AUDIO_DURATION_MS = Number(process.env.MAX_AUDIO_DURATION_MS || 2 * 60
 const MAX_UPLOAD_BYTES = Number(process.env.MAX_UPLOAD_BYTES || 10 * 1024 * 1024) // default 10 MiB
 const ALLOWED_AUDIO_MIME = (process.env.ALLOWED_AUDIO_MIME || 'audio/webm,audio/wav,audio/ogg,audio/mpeg,audio/mp4')
     .split(',').map(s => s.trim()).filter(Boolean)
+
+
+    const RATE_LOGIN_WINDOW_MS = Number(process.env.RATE_LOGIN_WINDOW_MS || 15 * 60 * 1000)
+const RATE_LOGIN = Number(process.env.RATE_LOGIN || 10)
+const RATE_TRANSCRIBE_WINDOW_MS = Number(process.env.RATE_TRANSCRIBE_WINDOW_MS || 5 * 60 * 1000)
+const RATE_TRANSCRIBE = Number(process.env.RATE_TRANSCRIBE || 6)
+
+const limiterCommon = { standardHeaders: true, legacyHeaders: false, message: { error: 'Too many requests' } }
+
+const loginLimiter = rateLimit({ windowMs: RATE_LOGIN_WINDOW_MS, limit: RATE_LOGIN, ...limiterCommon })
+const transcribeLimiter = rateLimit({ windowMs: RATE_TRANSCRIBE_WINDOW_MS, limit: RATE_TRANSCRIBE, ...limiterCommon })
+
 
 function isSubscriptionActive(status){
     return status === 'active'
@@ -256,7 +271,7 @@ app.post('/register', async (req, res) => {
     }
 })
 
-app.post('/login', async (req, res) => {
+app.post('/login', loginLimiter, async (req, res) => {
     try {
         const {email, password} = req.body
         if (!email || !password){
@@ -400,7 +415,7 @@ app.patch('/enhance-project-context', authenticateToken, async (req,res) => {
     }
 })
 
-app.post('/transcribe',authenticateToken, upload.single('audio'), async (req, res) => {
+app.post('/transcribe', authenticateToken, transcribeLimiter, upload.single('audio'), async (req, res) => {
     const {projectId} = req.body
     const durationMs = Number(req.body?.durationMs)
     const userId = req.user?.userId

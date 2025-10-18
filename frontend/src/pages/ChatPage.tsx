@@ -289,6 +289,12 @@ export default function ChatPage(){
                     navigate('/login')
                     return
                 }
+
+                if (response.status === 429) {
+                    const retry = Number(response.headers.get('Retry-After') || '');
+                    toast.error(Number.isFinite(retry) && retry > 0 ? `Too many requests. Please try again in ${retry} seconds.` : 'Too many requests. Please try again shortly.')
+                    return
+                }
                 console.error('Failed to transcribe audio')
                 toast.error('Failed to transcribe audio')
             }

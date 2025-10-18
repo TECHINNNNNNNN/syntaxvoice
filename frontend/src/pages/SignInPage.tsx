@@ -3,6 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import {z} from 'zod';
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 const BASE_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:1234'
 
@@ -37,6 +38,13 @@ export default function SignInPage() {
                 },
                 body: JSON.stringify(data)
             })
+
+            if (response.status === 429) {
+                const retry = Number(response.headers.get('Retry-After') || '');
+                toast.error(Number.isFinite(retry) && retry > 0 ? `Too many requests. Please try again in ${retry} seconds.` : 'Too many requests. Please try again later.')
+                setIsSubmitting(false)
+                return
+            }
 
             const responseData = await response.json()
 
