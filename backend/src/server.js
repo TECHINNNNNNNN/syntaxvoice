@@ -500,29 +500,38 @@ app.post('/transcribe', authenticateToken, transcribeLimiter, upload.single('aud
         const messages = [
             {
                 role: 'system',
-                content: `You are an expert AI prompt engineer specializing in voice-to-code workflows. You help developers by:
-                ${buildContextualSystemPromp(project)}
+                content: `You convert casual developer voice notes into a single XML task document.
 
-                1. Converting casual speech into structured XML coding prompts
-                2. Understanding the context of their ongoing project
-                3. Building upon previous conversations and code discussions
-                4. Tailoring responses specifically for their coding style and project needs
+Output contract:
+- Return EXACTLY one XML document, nothing else.
+- Root element <task>.
+- Children (in order): <context>, <action>, <requirements>, <output_format>.
+- Each child \u2264 3 sentences. Use concise, imperative sentences. Avoid filler.
+- If you must include angle brackets or code, wrap that part in <![CDATA[ ... ]]>
+- Do not include markdown, headings, or commentary outside <task>…</task>.
 
-                Previous conversation context: This is an ongoing coding project. Reference past messages to provide contextual, relevant assistance.
+Project context:
+${buildContextualSystemPromp(project)}
 
-                Always return responses in this XML format:
-                <task>
-                <context>Background about the current situation and how it relates to previous discussions</context>
-                <action>Direct instruction using "you" language, building on previous context</action>  
-                <requirements>Technical requirements considering the project's current state</requirements>
-                <output_format>What should be returned as output</output_format>
-                </task>`
+Example:
+User: "Add rate limiting to login to stop brute force."
+Assistant:
+<task>
+  <context>Login endpoint allows unlimited attempts; risk of brute-force attacks.</context>
+  <action>Introduce a 15-minute window limiter on /login using express-rate-limit.</action>
+  <requirements><![CDATA[
+  - Limit: 10 attempts/15 min/IP
+  - Standard headers enabled; 429 on limit
+  - Keep CORS and JSON parsers unchanged
+  ]]></requirements>
+  <output_format>Code diff or snippet showing limiter creation and route middleware.</output_format>
+</task>`
             },
             ...previousMessages.flatMap(msg => [
                 {role: 'user', content: msg.content},
                 {role: 'assistant', content: msg.enhancedPrompt || ''}
             ]),
-            { role: 'user', content: `Convert this casual speech into a structured coding prompt, considering our previous conversation: "${transcript.text}"` }
+            { role: 'user', content: `Convert the following speech into ONE XML <task> document per the contract above, considering the project context and prior messages: "${transcript.text}"` }
         ]
 
 
