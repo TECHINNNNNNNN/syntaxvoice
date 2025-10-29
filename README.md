@@ -408,10 +408,10 @@ MIT License - feel free to use this code for learning purposes.
 
 Built with ❤️ by Techin Chompooborisuth
 
-- Portfolio: [techinboom.com](#)
-- LinkedIn: [https://www.linkedin.com/in/techin-chompooborisuth-396b19268](#)
-- GitHub: [https://github.com/TECHINNNNNNNN](#)
-- Email: chompooborisuthtechin@gmail.com
+- Portfolio: [techinboom.com](https://techinboom.com)
+- LinkedIn: [linkedin.com/in/techin-chompooborisuth](https://www.linkedin.com/in/techin-chompooborisuth-396b19268)
+- GitHub: [github.com/TECHINNNNNNNN](https://github.com/TECHINNNNNNNN)
+- Email: [chompooborisuthtechin@gmail.com](mailto:chompooborisuthtechin@gmail.com)
 
 ---
 
