@@ -1,0 +1,143 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient circle -->
+  <circle cx="256" cy="256" r="256" fill="url(#bgGradient)"/>
+  
+  <!-- Glass effect overlay -->
+  <circle cx="256" cy="256" r="240" fill="url(#glassGradient)" opacity="0.3"/>
+  
+  <!-- Sound wave visualization (left side) -->
+  <g opacity="0.6">
+    <path d="M120 256 Q120 200, 140 180" stroke="url(#waveGradient1)" stroke-width="8" stroke-linecap="round" fill="none"/>
+    <path d="M100 256 Q100 170, 130 140" stroke="url(#waveGradient1)" stroke-width="6" stroke-linecap="round" fill="none"/>
+    <path d="M80 256 Q80 140, 120 100" stroke="url(#waveGradient1)" stroke-width="4" stroke-linecap="round" fill="none"/>
+  </g>
+  
+  <!-- Sound wave visualization (right side) -->
+  <g opacity="0.6">
+    <path d="M392 256 Q392 200, 372 180" stroke="url(#waveGradient2)" stroke-width="8" stroke-linecap="round" fill="none"/>
+    <path d="M412 256 Q412 170, 382 140" stroke="url(#waveGradient2)" stroke-width="6" stroke-linecap="round" fill="none"/>
+    <path d="M432 256 Q432 140, 392 100" stroke="url(#waveGradient2)" stroke-width="4" stroke-linecap="round" fill="none"/>
+  </g>
+  
+  <!-- Code brackets background -->
+  <g opacity="0.2" stroke="#F59E0B" stroke-width="3" fill="none">
+    <path d="M180 140 L140 180 L140 332 L180 372"/>
+    <path d="M332 140 L372 180 L372 332 L332 372"/>
+  </g>
+  
+  <!-- Central microphone icon -->
+  <g transform="translate(256, 256)">
+    <!-- Mic stand base -->
+    <rect x="-4" y="80" width="8" height="40" fill="url(#micGradient)" rx="4"/>
+    <ellipse cx="0" cy="120" rx="35" ry="8" fill="url(#micGradient)"/>
+    
+    <!-- Mic body -->
+    <g>
+      <!-- Outer glow -->
+      <ellipse cx="0" cy="0" rx="52" ry="72" fill="url(#glowGradient)" opacity="0.4"/>
+      
+      <!-- Main mic body -->
+      <ellipse cx="0" cy="0" rx="45" ry="65" fill="url(#micBodyGradient)"/>
+      
+      <!-- Mic grille lines -->
+      <g opacity="0.3">
+        <line x1="-30" y1="-40" x2="30" y2="-40" stroke="#1F2937" stroke-width="2"/>
+        <line x1="-35" y1="-25" x2="35" y2="-25" stroke="#1F2937" stroke-width="2"/>
+        <line x1="-38" y1="-10" x2="38" y2="-10" stroke="#1F2937" stroke-width="2"/>
+        <line x1="-40" y1="5" x2="40" y2="5" stroke="#1F2937" stroke-width="2"/>
+        <line x1="-38" y1="20" x2="38" y2="20" stroke="#1F2937" stroke-width="2"/>
+        <line x1="-35" y1="35" x2="35" y2="35" stroke="#1F2937" stroke-width="2"/>
+      </g>
+      
+      <!-- Mic top cap -->
+      <ellipse cx="0" cy="-65" rx="45" ry="12" fill="url(#capGradient)"/>
+      
+      <!-- Shine effect -->
+      <ellipse cx="-15" cy="-20" rx="18" ry="30" fill="white" opacity="0.15"/>
+    </g>
+    
+    <!-- Mic connector -->
+    <rect x="-8" y="65" width="16" height="15" fill="url(#connectorGradient)" rx="3"/>
+  </g>
+  
+  <!-- XML/Code symbols floating around -->
+  <g fill="url(#accentGradient)" opacity="0.8" font-family="monospace" font-weight="bold" font-size="32">
+    <text x="200" y="120" transform="rotate(-15 200 120)">&lt;</text>
+    <text x="290" y="120" transform="rotate(15 290 120)">/&gt;</text>
+    <text x="160" y="400" transform="rotate(-10 160 400)">{</text>
+    <text x="330" y="400" transform="rotate(10 330 400)">}</text>
+  </g>
+  
+  <!-- Waveform at bottom -->
+  <path d="M150 420 L165 410 L180 425 L195 405 L210 430 L225 410 L240 420 L255 400 L270 425 L285 410 L300 420 L315 430 L330 415 L345 425 L360 410" 
+        stroke="url(#waveGradient3)" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.5"/>
+  
+  <!-- Gradients -->
+  <defs>
+    <!-- Background gradient -->
+    <radialGradient id="bgGradient">
+      <stop offset="0%" stop-color="#1F2937"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </radialGradient>
+    
+    <!-- Glass effect -->
+    <linearGradient id="glassGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    
+    <!-- Microphone body gradient -->
+    <linearGradient id="micBodyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FCD34D"/>
+      <stop offset="50%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#D97706"/>
+    </linearGradient>
+    
+    <!-- Glow gradient -->
+    <radialGradient id="glowGradient">
+      <stop offset="0%" stop-color="#FBBF24"/>
+      <stop offset="100%" stop-color="#F59E0B" stop-opacity="0"/>
+    </radialGradient>
+    
+    <!-- Cap gradient -->
+    <linearGradient id="capGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FEF3C7"/>
+      <stop offset="100%" stop-color="#FCD34D"/>
+    </linearGradient>
+    
+    <!-- Mic stand gradient -->
+    <linearGradient id="micGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#9CA3AF"/>
+      <stop offset="100%" stop-color="#6B7280"/>
+    </linearGradient>
+    
+    <!-- Connector gradient -->
+    <linearGradient id="connectorGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#6B7280"/>
+      <stop offset="100%" stop-color="#4B5563"/>
+    </linearGradient>
+    
+    <!-- Wave gradients -->
+    <linearGradient id="waveGradient1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#F59E0B" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#F59E0B"/>
+    </linearGradient>
+    
+    <linearGradient id="waveGradient2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#F59E0B" stop-opacity="0"/>
+    </linearGradient>
+    
+    <linearGradient id="waveGradient3" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#F59E0B" stop-opacity="0.3"/>
+      <stop offset="50%" stop-color="#FBBF24"/>
+      <stop offset="100%" stop-color="#F59E0B" stop-opacity="0.3"/>
+    </linearGradient>
+    
+    <!-- Accent gradient for symbols -->
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FBBF24"/>
+      <stop offset="100%" stop-color="#F59E0B"/>
+    </linearGradient>
+  </defs>
+</svg>
